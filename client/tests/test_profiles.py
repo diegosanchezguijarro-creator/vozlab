@@ -153,7 +153,21 @@ def test_discover_returns_nothing_when_nobody_answers():
 
 # ------------------------------------------------------------- TLS pinning ----
 
-OPENSSL = subprocess.run(["which", "openssl"], capture_output=True, text=True).stdout.strip()
+def _find_openssl() -> str:
+    """Path to an openssl binary, or '' — `which` does not exist on Windows."""
+    import shutil
+    exe = shutil.which("openssl")
+    if not exe:
+        return ""
+    try:
+        result = subprocess.run([exe, "version"], capture_output=True,
+                                text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return exe if result.returncode == 0 else ""
+
+
+OPENSSL = _find_openssl()
 
 
 @pytest.fixture(scope="module")
