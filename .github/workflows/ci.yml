@@ -43,10 +43,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-        # the API tests need the web stack (fastapi/starlette/httpx); the heavy
-        # faster-whisper import only happens lazily when the server starts
-        # the API tests need the web stack (fastapi/starlette/httpx); the heavy
-        # faster-whisper import only happens lazily when the server starts
+      # the API tests need the web stack (fastapi/starlette/httpx); the heavy
+      # faster-whisper import only happens lazily when the server starts
+      - name: Install test dependencies
         run: pip install pytest pyyaml fastapi starlette httpx
       - name: Byte-compile server
         run: python -m compileall -q server/server.py server/cleanup.py

@@ -13,6 +13,17 @@ permissions:
   contents: read
 
 jobs:
+  workflows:
+    name: Workflow files (actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # A malformed workflow file fails as "workflow file issue" with no logs and
+      # never runs, which is how a nested `run:` under `with:` slipped through.
+      - uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color
+
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest
