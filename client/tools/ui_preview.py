@@ -20,9 +20,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import customtkinter as ctk  # noqa: E402
 
+from vozlab import VERSION  # noqa: E402
 from vozlab import config as cfgmod  # noqa: E402
 from vozlab import i18n  # noqa: E402
-from vozlab.api import VozLabAPI  # noqa: E402
 from vozlab.ui import about, pill, settings_window, theme, wizard  # noqa: E402
 
 SHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -35,8 +35,87 @@ DEMO_CONFIG = {
     "cleanup": True, "language": "auto", "beeps": True,
     "restore_clipboard": True, "show_pill": True, "pill_position": "bottom-center",
     "ui_language": "auto", "launch_at_login": True, "debug": False,
+    "style": "default", "per_app_profiles": True,
+    "vocabulary": ["VozLab", "Diego", "qwen2.5"],
     "first_run_done": True,
 }
+
+
+class DemoServerAPI:
+    """Stands in for a live server when rendering screenshots.
+
+    The preview runs on a workstation with no VozLab server (or, worse, with one
+    that answers 401 to the demo token), which used to put a red "token was
+    rejected" banner in every screenshot. This returns a realistic connected
+    server instead, so the images show the product working.
+    """
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def health(self):
+        return {"ok": True, "version": VERSION, "api": 1}
+
+    def status(self):
+        return {
+            "name": "vozlab", "version": VERSION, "api": 1,
+            "whisper_model": "small", "language": "auto",
+            "cleanup": True, "cleanup_model": "qwen2.5:7b-instruct",
+            "device": "cuda", "uptime_s": 3 * 3600 + 900, "requests": 248,
+            "whisper_models_cached": ["faster-whisper-small", "faster-whisper-base"],
+            "ollama_models": ["qwen2.5:7b-instruct", "llama3.1:8b"],
+            "gpu": {"name": "NVIDIA GeForce RTX 4060", "memory_total_mb": 8188,
+                    "memory_used_mb": 4820},
+            "reloading": False, "tls": False,
+            "auth": {"role": "device", "device": "diego-laptop"},
+        }
+
+    def get_settings(self):
+        return {"vocabulary": ["VozLab", "Diego"], "styles": ["bullets", "casual", "concise",
+                                                             "default", "formal"]}
+
+    def logs(self, lines: int = 100):
+        return [
+            "2026-10-13 18:02:11 loaded 'small' on cuda (int8_float16) in 1.6s",
+            "2026-10-13 18:02:11 cleanup model warm in 0.2s",
+            "2026-10-13 18:02:14 discovery responder listening on udp/8093",
+            "2026-10-13 18:04:52 settings updated: {'style': 'formal'}",
+            "2026-10-13 18:07:03 cleanup rejected (invented 4 words (>2)); keeping raw transcript",
+            "2026-10-13 18:11:40 self-test: 0.21s whisper, 0.24s cleanup",
+        ][-lines:]
+
+    def list_tokens(self):
+        return [
+            {"id": "a1b2c3d4", "name": "diego-laptop", "created": 1791800000,
+             "last_used": 1791908000, "last_ip": "192.168.0.42", "age_days": 1.2, "used": True},
+            {"id": "e5f6a7b8", "name": "office-desktop", "created": 1791000000,
+             "last_used": None, "last_ip": None, "age_days": 10.5, "used": False},
+        ]
+
+    def patch_settings(self, changes):
+        return {"ok": True, "applied": changes, "reloading": False}
+
+    def preload_model(self, model=None):
+        return {"ok": True, "model": model or "qwen2.5:7b-instruct", "seconds": 2.8}
+
+    def self_test(self):
+        return {"ok": True, "text": "If you can read this, the server works.",
+                "raw_text": "VozLab self test. If you can read this, the server works.",
+                "language": "en", "cleanup_error": None, "device": "cuda",
+                "timings": {"whisper_s": 0.21, "cleanup_s": 0.24, "total_s": 0.45}}
+
+    def transcribe(self, wav, cleanup=True, language="auto", style=""):
+        return {"text": "Remind me to call the client on Thursday.",
+                "raw_text": "remind me to call the client on thursday",
+                "cleanup_used": True, "cleanup_rejected": None, "style": style or "default",
+                "language": "en", "timings": {"whisper_s": 0.31, "cleanup_s": 0.26,
+                                              "total_s": 0.57}}
+
+    def create_token(self, name):
+        return {"id": "99887766", "name": name, "token": "demo-token-shown-once"}
+
+    def revoke_token(self, token_id):
+        return {"ok": True, "revoked": token_id, "remaining": 1}
 
 
 class FakeApp:
@@ -49,10 +128,17 @@ class FakeApp:
         self.tr = i18n.Translator(lang)
         self.root = ctk.CTk()
         self.root.withdraw()
-        self.api = VozLabAPI("http://192.168.0.23:8092", "demo")
+        self.api = DemoServerAPI()
         self.settings_window = None
         self.wizard = None
         self.overlay = None
+        self.last_update_message = ""
+        self.last_update_url = ""
+        self.last_server_health = None
+        self.last_text = ""
+        # the windows build their own client: hand them the demo server
+        settings_window.VozLabAPI = DemoServerAPI
+        wizard.VozLabAPI = DemoServerAPI
 
     def post(self, fn):
         fn()          # synchronous in preview mode
