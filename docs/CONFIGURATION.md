@@ -14,6 +14,7 @@ for completeness and for advanced tweaks; the app rewrites it on save.
 | `server_host` | — | server IP or hostname (`192.168.0.23`) |
 | `server_port` | `8092` | server port |
 | `token` | — | the token. **Encrypted on disk** as `token_enc` (Windows DPAPI); plain text only on Linux/macOS dev machines |
+| `tls_pin` | `""` | SHA-256 of the server's certificate (only used with `https://`) |
 | `hotkey` | — | hardware scan code (e.g. `285` = right Ctrl) or key name |
 | `hotkey_mode` | `"hold"` | `hold` (push-to-talk) or `toggle` |
 | `auto_stop` | `false` | end the recording automatically after you stop speaking |
@@ -23,6 +24,10 @@ for completeness and for advanced tweaks; the app rewrites it on save.
 | `max_seconds` | `60` | hard limit per recording |
 | `cleanup` | `true` | ask the server to run the AI formatting pass |
 | `cleanup_guard` | `true` | never let the formatter rewrite what you said |
+| `style` | `"default"` | writing style: `default`, `formal`, `casual`, `concise`, `bullets` |
+| `per_app_profiles` | `true` | choose the style from the app you are typing into |
+| `profiles` | shipped defaults | `{"slack.exe": "casual", …}`; `null` = the built-in map |
+| `vocabulary` | `[]` | names/terms the server should expect (also biases Whisper) |
 | `language` | `"auto"` | language hint (`auto`, `en`, `es`, …) |
 | `input_device` | `null` | microphone name; `null` follows the system default |
 | `beeps` | `false` | short beeps when recording starts/stops |
@@ -62,6 +67,10 @@ Created on first boot with a generated token. Edit it and restart
 | `language` | `auto` | auto-detect, or force `en`, `es`, … |
 | `compute_type` | `int8_float16` | GPU quantisation (`int8` on CPU) |
 | `beam_size` | `5` | higher = slightly more accurate, slower |
+| `vad_filter` | `true` | trim silence before transcribing; `false` is faster for short clips |
+| `vocabulary` | `[]` | names/terms to bias Whisper and the formatter |
+| `discovery` | `true` | answer LAN discovery probes on UDP 8093 |
+| `tls_certfile` / `tls_keyfile` | — | paths to a certificate/key; `install.sh --tls` writes them |
 | `cleanup` | `true` | run the LLM formatting pass |
 | `cleanup_guard` | `true` | reject AI rewrites that invent words |
 | `cleanup_model` | `qwen2.5:7b-instruct` | any Ollama model |
@@ -84,7 +93,12 @@ VOZLAB_CLEANUP=true
 VOZLAB_CLEANUP_GUARD=true
 VOZLAB_CLEANUP_MODEL=qwen2.5:3b-instruct
 VOZLAB_CLEANUP_BASE_URL=http://ollama:11434
+VOZLAB_VAD_FILTER=true          # false = faster on very short clips
 VOZLAB_EXPOSE_DETAILS=false      # true = verbose /health (unauthenticated)
+VOZLAB_TLS_CERT=/data/tls/cert.pem   # enables HTTPS (see install.sh --tls)
+VOZLAB_TLS_KEY=/data/tls/key.pem
+VOZLAB_PUBLIC_PORT=8092          # port advertised to LAN discovery
+VOZLAB_DISCOVERY_PORT=8093       # UDP probe port; 0 disables discovery
 VOZLAB_RATE_LIMIT=120           # requests/minute per client; 0 disables
 VOZLAB_CONFIG=/data/config.json # where to read/write the file
 ```

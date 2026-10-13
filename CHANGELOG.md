@@ -3,6 +3,80 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-10-13
+
+**The rest of the roadmap: HTTPS you can actually use, per-app styles, custom
+vocabulary, LAN discovery, and an arm64 image.**
+
+### Added — HTTPS with certificate pinning
+- `install.sh --tls` generates a self-signed certificate (SANs cover the LAN IP,
+  localhost and the hostname), writes `server/.env` so Compose passes
+  `VOZLAB_TLS_CERT`/`VOZLAB_TLS_KEY`, and prints the fingerprint.
+- The app **pins** that certificate on first connect (trust on first use) and
+  refuses any other certificate afterwards — `fetch_fingerprint()`,
+  `PinnedAdapter` (urllib3 `assert_fingerprint`, so pinning replaces the CA check
+  and a self-signed certificate needs no warning to click through).
+- A changed certificate is a hard error (`bad_cert`) with instructions, not a
+  silent retry. *Settings → Server* shows the pinned fingerprint, **Re-pin** and
+  **Forget**. Plain `http://` keeps working exactly as before.
+
+### Added — per-app formatting profiles
+- Five writing styles on the server (`default`, `formal`, `casual`, `concise`,
+  `bullets`) sent per request as `?style=`, with the value echoed back.
+- The client resolves the style from the **foreground app** (ctypes
+  `GetForegroundWindow`/`QueryFullProcessImageNameW`, no dependencies) at the
+  moment you stop talking, because that is where the text will land.
+- Ships sensible rules for the usual apps (Outlook/Word → formal,
+  Slack/Discord/Teams/WhatsApp → casual) and a UI to add, remove and detect your
+  own (`"Use the app I'm in now"`).
+- Styles are tone hints only: the cleanup guard still rejects any rewrite that
+  invents or drops words, so a wrong profile cannot corrupt a dictation.
+
+### Added — custom vocabulary
+- A list of names and terms (your name, company, product names) that is
+  **injected into the formatter prompt** and passed to Whisper as an
+  `initial_prompt`.
+- Measurable effect on the test corpus: the bundled sample used to transcribe
+  "For some self-test"; with `VozLab` in the vocabulary it transcribes
+  "VozLab self-test".
+- Managed from *Settings → Formatting → Names and terms* (`PATCH /settings`,
+  sanitized: de-duplicated, trimmed, capped at 200 terms).
+
+### Added — LAN discovery
+- The server answers `VOZLAB/1 discover` on UDP 8093 with its name, version, HTTP
+  port, TLS flag, model and device — **never the token or any setting**.
+- *Find my server* in the wizard and the Server tab broadcasts the probe and
+  lists what answers (including over Docker's UDP port mapping). Disable with
+  `VOZLAB_DISCOVERY_PORT=0` or `"discovery": false`.
+
+### Added — multi-arch server image
+- `linux/amd64` **and** `linux/arm64` are built and pushed per release. The
+  Dockerfile now installs the CUDA wheels only on amd64 (`ARG TARGETARCH`), so
+  Raspberry Pi 5 / NAS hosts get a working CPU build instead of a failed one.
+- CI builds both architectures on every PR (no push) and asserts the arm64 image
+  contains no CUDA wheels and imports cleanly.
+- `server/check_arm64.sh`: one command for real aarch64 owners to verify
+  transcription. Being explicit: arm64 builds, starts and loads the model, but we
+  could not verify end-to-end inference — QEMU-emulated CTranslate2 never
+  completes — so real-hardware numbers are welcome.
+- `run_server.py` replaces the shell-free `uvicorn` CMD to add TLS flags from
+  configuration.
+
+### Changed
+- `vad_filter` is configurable (default on). Turning it off skips an onnxruntime
+  pass per request, which is worth it for very short clips.
+- The client's paste shortcut is platform-aware (`⌘V` on macOS) and the
+  diagnostics report lists capabilities per platform.
+- Documentation: a platform support matrix (what is tested where), TLS and
+  discovery sections in `REMOTE.md`/`SERVER.md`, the new keys in
+  `CONFIGURATION.md`, `style`/`vocabulary`/`tls` in `API.md`.
+
+### Fixed
+- An empty `CTkFrame` kept CTk's default 200 px height, leaving a gap in the
+  wizard and Server tab; the discovery and pin cards are now created lazily.
+- Two more `except … as e` lambdas were about to ship with the same
+  `NameError`-on-error-path bug that `ruff` caught in 1.3.0 — caught again by CI.
+
 ## [1.3.0] — 2026-10-13
 
 **Security, unified settings and a real settings overhaul.** Everything from C, D

@@ -13,6 +13,7 @@ import re
 import sys
 
 from . import VERSION
+from . import platform_info
 
 MAX_LOG_LINES = 200
 
@@ -61,6 +62,7 @@ def build_report(cfg: dict, log_path: str = "", server_health: dict | None = Non
         f"Python         : {sys.version.split()[0]}",
         f"Platform       : {platform.platform()}",
         f"Machine        : {platform.machine()}",
+        f"Capabilities   : {platform_info.describe()}",
     ]
     if extra:
         for key, value in extra.items():

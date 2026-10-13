@@ -8,12 +8,24 @@ LAN — a gaming PC, a home server, a NAS, a mini-PC.
 
 | | Minimum | Recommended |
 |---|---|---|
-| OS | Any Linux with Docker Engine 20.10+ | Ubuntu 22.04/24.04 |
+| OS | Any Linux with Docker Engine 20.10+ (amd64 or arm64) | Ubuntu 22.04/24.04 |
 | GPU | none (CPU mode, ~5-10× slower) | NVIDIA, ≥6 GB VRAM, driver ≥550 |
 | RAM | 4 GB | 8 GB+ |
 | Disk | 3 GB (models + images) | 6 GB |
 
-macOS/Windows servers are possible (Docker Desktop) but not tested.
+### Platform support
+
+| Platform | Image | Status |
+|---|---|---|
+| Linux amd64 + NVIDIA GPU | `linux/amd64` | tested (RTX 4060: ~0.4 s per dictation) |
+| Linux amd64, CPU only | `linux/amd64` | tested (fallback works, `small` ≈ 3-6 s) |
+| Linux arm64 (Raspberry Pi 5, NAS) | `linux/arm64` | builds in CI and starts; **transcription not verified on real hardware yet** — run `bash server/check_arm64.sh` on your Pi and report the numbers |
+| macOS (Apple Silicon) | `linux/arm64` under Docker Desktop | CPU-only, community-reported; the *client* has no macOS build |
+| Windows server | `linux/amd64` under WSL2/Docker Desktop | CPU mode; GPU passthrough is best-effort |
+
+The arm64 image deliberately ships **without** the CUDA wheels (they are
+amd64-only), so on a Pi you get CPU inference. `tiny`, `base` or `small.en` are
+the sensible models there.
 
 ## Install
 
@@ -43,6 +55,15 @@ and prints:
 ```
 Server URL : http://192.168.0.23:8092
 Token      : PASTE-THE-TOKEN-PRINTED-ABOVE
+```
+
+Add `--tls` to also create a self-signed certificate and serve HTTPS (the app
+pins it on first connect — see [REMOTE.md](REMOTE.md)):
+
+```bash
+bash install.sh --with-ai --tls
+#  Server URL : https://192.168.0.23:8092
+#  Certificate : 26:AE:6E:DD:…:5A:E7
 ```
 
 First start downloads the Whisper model (~500 MB) into `server/data/hf/`.
@@ -138,6 +159,12 @@ docker compose up -d --build   # update after a git pull
 ```
 
 Backup/restore: `server/data/` (config + model cache). Models re-download if lost.
+
+## Discovery
+
+The container publishes UDP **8093** and answers `VOZLAB/1 discover` probes with
+its name, version, HTTP port and TLS flag (never the token), so the app's *Find my
+server* button works. Set `VOZLAB_DISCOVERY_PORT=0` to switch it off.
 
 ## Security notes
 

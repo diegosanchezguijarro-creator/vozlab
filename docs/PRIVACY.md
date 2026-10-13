@@ -36,6 +36,10 @@ straight to the server; the server decodes the uploaded bytes **in memory** and
 hands them to faster-whisper, so no temporary file is created anywhere. There is
 no recording, no preview, no history, and no retention setting to get wrong.
 
+Your **custom vocabulary** (names, product names) is stored in
+`server/data/config.json` and `%APPDATA%\VozLab\config.json`: it is a list of
+terms you chose, used to bias recognition. It is not sent anywhere else.
+
 **Transcripts never reach `vozlab.log` by default.** The log records lengths,
 languages and timings, not what you said. Only with *Debug logging* on (off by
 default) do the words get written, so you can analyse a bad transcription — turn
@@ -61,6 +65,13 @@ line is written.
   device, GPU, uptime, request count) lives behind the token at `/status`. Set
   `"expose_details": true` in `server/data/config.json` if you *want* the old
   verbose `/health`. OpenAPI docs (`/docs`) are disabled.
+- **LAN discovery replies contain no credential**: name, version, HTTP port, TLS
+  flag, model and device. It answers only to a broadcast probe on UDP 8093 and
+  can be switched off (`VOZLAB_DISCOVERY_PORT=0`).
+- **HTTPS is available and pinned**: `install.sh --tls` creates a self-signed
+  certificate; the app stores its SHA-256 fingerprint on first connect and
+  refuses any other certificate afterwards. That protects the audio on the wire,
+  which is the one thing a home LAN cannot promise.
 - Requests are rate-limited per client (`VOZLAB_RATE_LIMIT`, default 120/min).
 - **Keep the server on a trusted LAN.** The API is plain HTTP: anyone who can
   sniff your network AND has a token could send audio to it. If you need remote
@@ -111,7 +122,8 @@ alongside the binaries.
 | An LLM "helpfully" rewriting your text | ✅ the guard rejects rewrites that invent words, falling back to the raw transcript |
 | Malicious model in Ollama | ⚠️ model weights run as data, but Ollama is a separate process you control; pin models you trust |
 | Supply chain (pip/Docker) | ✅ pinned by exact version, base image by digest; `pip-audit`, `bandit`, `gitleaks`, Dependabot and an SBOM per release |
-| Plain HTTP on the LAN | ❌ not covered — TLS is not built in yet; use a VPN ([REMOTE.md](REMOTE.md)) |
+| Someone sniffing your LAN | ✅ optional: `install.sh --tls` + certificate pinning encrypts the audio ([REMOTE.md](REMOTE.md)); plain HTTP is still the default for a trusted home network |
+| A rogue device pretending to be your server | ✅ with a pinned certificate the app refuses it (the fingerprint stops matching) |
 
 ## Verifying the claims
 

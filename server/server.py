@@ -35,9 +35,10 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-from cleanup import DEFAULT_CLEANUP_PROMPT, cleanup_ok, strip_decoration
+from cleanup import (DEFAULT_CLEANUP_PROMPT, STYLES, build_prompt, cleanup_ok,
+                     normalize_style, sanitize_vocabulary, strip_decoration)
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 NAME = "vozlab"
 API_VERSION = 1          # bump when the HTTP contract changes incompatibly
 
@@ -46,6 +47,12 @@ CONFIG_PATH = os.environ.get("VOZLAB_CONFIG", "/data/config.json")
 # Rate limiting: dictations are seconds apart, so this only stops abuse/mistakes.
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("VOZLAB_RATE_LIMIT", "120"))
 LOG_RING_SIZE = 300
+
+# The app can find this server on the LAN by broadcasting a UDP probe.
+DISCOVERY_PORT = int(os.environ.get("VOZLAB_DISCOVERY_PORT", "8093"))
+DISCOVERY_MAGIC = b"VOZLAB/1 discover"
+# port the app should use — the published one, not the container's 8080
+PUBLIC_PORT = os.environ.get("VOZLAB_PUBLIC_PORT", "8092")
 
 # Environment overrides — handy for Docker/Compose deployments where editing
 # config.json is awkward. Anything set here wins over the file.
@@ -69,6 +76,7 @@ DEFAULT_CONFIG = {
     "language": "auto",                 # or "en", "es", "de", ...  ("auto" needs a multilingual model)
     "compute_type": "int8_float16",
     "beam_size": 5,
+    "vad_filter": True,                 # skip silence before transcribing
     "cleanup": True,
     "cleanup_model": "qwen2.5:7b-instruct",
     "cleanup_base_url": "http://host.docker.internal:11434",
@@ -76,6 +84,8 @@ DEFAULT_CONFIG = {
     "cleanup_max_tokens": 500,
     "cleanup_guard": True,              # reject cleanups that invent words, keep the raw text
     "cleanup_prompt": DEFAULT_CLEANUP_PROMPT,
+    "vocabulary": [],                   # names/terms Whisper should expect
+    "discovery": True,                  # answer LAN discovery probes
     "expose_details": False,            # /health stays minimal unless you opt in
     "docs": False,                      # OpenAPI docs (/docs) are off by default
 }
@@ -83,6 +93,52 @@ DEFAULT_CONFIG = {
 _state = {}
 _log_ring: deque[str] = deque(maxlen=LOG_RING_SIZE)
 _rate_buckets: dict[str, deque[float]] = {}
+
+
+def _discovery_payload() -> bytes:
+    """What a probe gets back: no token, no settings, nothing sensitive."""
+    cfg = _state.get("config") or {}
+    cert = os.environ.get("VOZLAB_TLS_CERT") or cfg.get("tls_certfile")
+    return json.dumps({
+        "name": NAME,
+        "version": VERSION,
+        "api": API_VERSION,
+        "port": int(PUBLIC_PORT),
+        "tls": bool(cert),
+        "whisper_model": cfg.get("whisper_model"),
+        "device": _state.get("device"),
+    }).encode("utf-8")
+
+
+def _discovery_loop() -> None:
+    """Answer UDP probes so the Windows app can find this server by itself."""
+    import socket
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind(("", DISCOVERY_PORT))
+    except OSError as e:
+        log_line(f"discovery responder off (udp {DISCOVERY_PORT}): {e}")
+        return
+    sock.settimeout(1.0)
+    log_line(f"discovery responder listening on udp/{DISCOVERY_PORT}")
+    try:
+        while not _state.get("shutdown"):
+            try:
+                data, addr = sock.recvfrom(512)
+            except socket.timeout:
+                continue
+            except OSError:
+                break
+            if not data.startswith(DISCOVERY_MAGIC):
+                continue
+            try:
+                sock.sendto(_discovery_payload(), addr)
+            except OSError:
+                pass
+    finally:
+        sock.close()
 
 
 def log_line(message: str) -> None:
@@ -198,7 +254,11 @@ async def lifespan(app: FastAPI):
     _state["reloading"] = False
     _state["cached_models"] = _cached_whisper_models()
     _state["gpu"] = _gpu_info()
+    _state["shutdown"] = False
     banner(cfg)
+
+    if cfg.get("discovery", True):
+        threading.Thread(target=_discovery_loop, daemon=True).start()
 
     from faster_whisper import WhisperModel
 
@@ -227,6 +287,7 @@ async def lifespan(app: FastAPI):
             log_line(f"cleanup warmup failed (will retry per request): {e}")
 
     yield
+    _state["shutdown"] = True
     _state.clear()
 
 
@@ -292,7 +353,9 @@ def transcribe_raw(cfg, audio, language: str | None = None):
     """Run faster-whisper on audio bytes (in memory — nothing touches disk)."""
     kwargs = {
         "beam_size": cfg["beam_size"],
-        "vad_filter": True,
+        # voice-activity detection trims silence (better on long clips) but it
+        # costs an onnxruntime pass per request; off makes short dictations faster
+        "vad_filter": bool(cfg.get("vad_filter", True)),
         # dictation clips are independent: without this, Whisper can repeat or
         # invent text when the audio is quiet or short (hallucinations)
         "condition_on_previous_text": False,
@@ -301,17 +364,24 @@ def transcribe_raw(cfg, audio, language: str | None = None):
     if lang and lang.lower() != "auto":
         kwargs["language"] = lang
 
+    # seeding Whisper with the user's names/terms makes it far more likely to
+    # spell them right (it is a prompt, not a hard rule)
+    terms = sanitize_vocabulary(cfg.get("vocabulary"))
+    if terms:
+        kwargs["initial_prompt"] = ", ".join(terms)[:400]
+
     stream = io.BytesIO(audio) if isinstance(audio, (bytes, bytearray)) else audio
     segments, info = _state["model"].transcribe(stream, **kwargs)
     text = "".join(seg.text for seg in segments).strip()
     return text, info.language
 
 
-async def cleanup_text(cfg, raw_text: str) -> str:
+async def cleanup_text(cfg, raw_text: str, style: str | None = None) -> str:
     payload = {
         "model": cfg["cleanup_model"],
         "messages": [
-            {"role": "system", "content": cfg["cleanup_prompt"]},
+            {"role": "system",
+             "content": build_prompt(cfg["cleanup_prompt"], style, cfg.get("vocabulary"))},
             {"role": "user", "content": raw_text},
         ],
         "temperature": cfg["cleanup_temperature"],
@@ -336,6 +406,7 @@ def service_info():
         "cleanup": cfg["cleanup"],
         "cleanup_model": cfg["cleanup_model"] if cfg["cleanup"] else None,
         "device": _state.get("device"),
+        "tls": bool(os.environ.get("VOZLAB_TLS_CERT") or cfg.get("tls_certfile")),
     }
     if _state.get("started_at"):
         info["uptime_s"] = int(time.time() - _state["started_at"])
@@ -344,10 +415,13 @@ def service_info():
 
 def _public_config(cfg: dict) -> dict:
     """Settings safe to send to an authenticated client (no token)."""
-    keys = ("whisper_model", "language", "compute_type", "beam_size", "cleanup",
+    keys = ("whisper_model", "language", "compute_type", "beam_size", "vad_filter", "cleanup",
             "cleanup_guard", "cleanup_model", "cleanup_base_url",
-            "cleanup_temperature", "cleanup_max_tokens", "expose_details")
+            "cleanup_temperature", "cleanup_max_tokens", "expose_details",
+            "vocabulary")
+    data_extra = {"styles": sorted(STYLES)}
     data = {k: cfg[k] for k in keys if k in cfg}
+    data.update(data_extra)
     data["token_set"] = bool(cfg.get("token"))
     data["config_path"] = CONFIG_PATH
     return data
@@ -478,15 +552,18 @@ async def patch_settings(request: Request, authorization: str = Header(default="
         raise HTTPException(status_code=400, detail="expected a JSON object")
 
     editable = {"whisper_model", "language", "cleanup", "cleanup_model",
-                "cleanup_guard", "beam_size", "compute_type", "expose_details"}
+                "cleanup_guard", "beam_size", "compute_type", "expose_details",
+                "vocabulary", "vad_filter"}
     applied, ignored = {}, []
     for key, value in body.items():
         if key not in editable:
             ignored.append(key)
             continue
+        if key == "vocabulary":
+            value = sanitize_vocabulary(value)
         if key == "beam_size":
             value = max(1, min(10, int(value)))
-        if key in ("cleanup", "cleanup_guard", "expose_details"):
+        if key in ("cleanup", "cleanup_guard", "expose_details", "vad_filter"):
             value = bool(value)
         if key == "language":
             value = str(value).lower()
@@ -626,6 +703,7 @@ async def transcribe(
     authorization: str = Header(default=""),
     cleanup: bool = Query(default=None),
     language: str = Query(default=None),
+    style: str = Query(default=None),
 ):
     authenticate(authorization, request)
     rate_limit(request, authorization)
@@ -652,12 +730,13 @@ async def transcribe(
     t_whisper = time.time() - t_whisper
 
     use_cleanup = cfg["cleanup"] if cleanup is None else cleanup
+    style = normalize_style(style)
     text, t_clean = raw_text, 0.0
     cleanup_rejected = None
     if use_cleanup and raw_text:
         t_clean = time.time()
         try:
-            candidate = await cleanup_text(cfg, raw_text)
+            candidate = await cleanup_text(cfg, raw_text, style)
             if cfg.get("cleanup_guard", True):
                 ok, reason = cleanup_ok(raw_text, candidate)
                 if not ok:
@@ -678,6 +757,7 @@ async def transcribe(
         "raw_text": raw_text,
         "cleanup_used": use_cleanup and bool(raw_text),
         "cleanup_rejected": cleanup_rejected,
+        "style": style,
         "language": language,
         "timings": {
             "whisper_s": round(t_whisper, 3),

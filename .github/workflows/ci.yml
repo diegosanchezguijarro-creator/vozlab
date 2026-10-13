@@ -43,7 +43,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Install test dependencies
+        # the API tests need the web stack (fastapi/starlette/httpx); the heavy
+        # faster-whisper import only happens lazily when the server starts
         # the API tests need the web stack (fastapi/starlette/httpx); the heavy
         # faster-whisper import only happens lazily when the server starts
         run: pip install pytest pyyaml fastapi starlette httpx
@@ -83,3 +84,38 @@ jobs:
               assert "gpu" in rendered, f"{base} + {gpu} must request a GPU"
               print(f"{base} + {gpu}: GPU requested")
           EOF
+
+  docker-image:
+    name: Docker image builds (amd64 + arm64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      # Build only — never push from CI. This fails the PR if the Dockerfile
+      # stops working on Raspberry Pi / NAS (the CUDA wheels are amd64-only).
+      - name: Build both architectures
+        uses: docker/build-push-action@v6
+        with:
+          context: server
+          file: server/Dockerfile
+          push: false
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: The arm64 image must not contain CUDA wheels and must import clean
+        run: |
+          docker build -q --platform linux/arm64 -t vozlab-arm64-check server >/dev/null
+          docker run --rm --platform linux/arm64 vozlab-arm64-check python -c "
+          import importlib.util, platform
+          assert platform.machine() == 'aarch64', platform.machine()
+          assert importlib.util.find_spec('nvidia') is None, 'CUDA wheels leaked into arm64'
+          import faster_whisper, av, uvicorn
+          print('arm64 image: python stack imports, no CUDA wheels')
+          "

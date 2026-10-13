@@ -151,7 +151,10 @@ Then hold your key, speak, release — the words appear where your cursor is.
 | 🌍 **Multilingual** | Auto-detects the language; 90+ supported. |
 | 🖥️ **Tray app with themes** | Animated status pill with a live mic level, dark **and light** themes, first-run wizard, six-tab settings in plain language. |
 | 🔒 **Private by design** | Audio goes only to your server. No telemetry. No audio written to disk. Your words never reach the log unless you enable debugging. |
-| 🔑 **Secrets stay secret** | The token is encrypted with Windows DPAPI, and each device can be given its own revocable token. |
+| 🔑 **Secrets stay secret** | The token is encrypted with Windows DPAPI, and each device can be given its own revocable token. Optional HTTPS with a **pinned** self-signed certificate. |
+| 🎭 **Speaks your register** | Formal in email, casual in Slack — chosen automatically from the app you are typing into. |
+| 📚 **Knows your names** | Add your name, company and product terms once: Whisper gets them right, every time. |
+| 🔎 **Finds itself** | *Find my server* broadcasts a probe and lists VozLab servers on your network. |
 | 📋 **Clipboard-safe** | Pastes with Ctrl+V and restores whatever you had copied. |
 | 🔁 **Easy updates** | `update.ps1` on the client, `docker compose pull` on the server, or the in-app update check. |
 | 🐳 **Runs anywhere** | Server is a Docker image: NVIDIA GPU, CPU-only, NAS, or Raspberry Pi (arm64 image coming). |
@@ -330,15 +333,16 @@ so `python run_vozlab.py` works on Linux/macOS for development
 
 ## Roadmap
 
-Done in 1.3.0: unified settings (the app configures the server), per-device
-revocable tokens, DPAPI-encrypted local secrets, container hardening and CI
-security scanning. Still ahead:
+Done in 1.3.0: unified settings, per-device tokens, DPAPI-encrypted secrets,
+container hardening, CI security scanning. Done in 1.4.0: TLS with certificate
+pinning, per-app formatting profiles, custom vocabulary, LAN discovery, and a
+multi-arch (amd64 + arm64) server image. Still ahead:
 
-- Per-app formatting profiles (formal in email, casual in chat)
-- Custom vocabulary ("VozLab", your colleagues' names)
-- arm64 server image (Raspberry Pi 5, NAS) and a macOS Apple Silicon path
-- TLS with certificate pinning (VPN is the recommended remote path today)
-- Automatic LAN server discovery in the wizard
+- A native macOS/Linux client (the Windows one is the supported build; see
+  [docs/SERVER.md](docs/SERVER.md#platform-support) for what runs where)
+- Streaming dictation (text appearing while you speak)
+- A built-in "record a few sentences and pick the best model" benchmark
+- Per-app *custom* formatting instructions, beyond the five built-in styles
 
 ---
 

@@ -195,7 +195,7 @@ def test_transcribe_survives_a_broken_audio_stream(monkeypatch):
 
 def test_transcribe_keeps_raw_text_when_cleanup_lies(stub_whisper, monkeypatch):
     """A hallucinating cleanup model must never replace the real transcript."""
-    async def bad_cleanup(cfg, raw_text):
+    async def bad_cleanup(cfg, raw_text, style=None):
         return "completely different words"
 
     monkeypatch.setattr(server, "cleanup_text", bad_cleanup)
@@ -321,3 +321,114 @@ def test_a_wrong_token_of_the_right_length_is_still_rejected():
     issued = client.post("/tokens", headers=AUTH, json={"name": "laptop"}).json()
     tampered = issued["token"][:-1] + ("A" if issued["token"][-1] != "A" else "B")
     assert client.get("/status", headers={"Authorization": f"Bearer {tampered}"}).status_code == 401
+
+
+# ------------------------------------------------ styles, vocabulary, TLS, LAN
+
+
+def test_transcribe_forwards_the_style(stub_whisper, monkeypatch):
+    seen = {}
+
+    async def spy(cfg, raw_text, style=None):
+        seen["style"] = style
+        return raw_text
+
+    monkeypatch.setattr(server, "cleanup_text", spy)
+    r = client.post("/transcribe?style=formal", headers=AUTH, content=b"RIFF")
+    assert r.status_code == 200
+    assert seen["style"] == "formal"
+    assert r.json()["style"] == "formal"
+
+
+def test_unknown_style_degrades_to_default(stub_whisper, monkeypatch):
+    seen = {}
+
+    async def spy(cfg, raw_text, style=None):
+        seen["style"] = style
+        return raw_text
+
+    monkeypatch.setattr(server, "cleanup_text", spy)
+    client.post("/transcribe?style=shakespearean", headers=AUTH, content=b"RIFF")
+    assert seen["style"] == "default"
+    assert client.post("/transcribe", headers=AUTH, content=b"RIFF").json()["style"] == "default"
+
+
+def test_vocabulary_is_sent_to_whisper_as_an_initial_prompt(monkeypatch):
+    captured = {}
+
+    class FakeInfo:
+        language = "en"
+
+    class FakeModel:
+        def transcribe(self, stream, **kwargs):
+            captured.update(kwargs)
+            return [], FakeInfo()
+
+    monkeypatch.setitem(server._state, "model", FakeModel())
+    cfg = {**server.DEFAULT_CONFIG, "vocabulary": ["VozLab", "Diego"]}
+    server.transcribe_raw(cfg, b"RIFF")
+    assert "VozLab" in captured["initial_prompt"]
+    assert "Diego" in captured["initial_prompt"]
+
+
+def test_no_vocabulary_means_no_initial_prompt(monkeypatch):
+    captured = {}
+
+    class FakeInfo:
+        language = "en"
+
+    class FakeModel:
+        def transcribe(self, stream, **kwargs):
+            captured.update(kwargs)
+            return [], FakeInfo()
+
+    monkeypatch.setitem(server._state, "model", FakeModel())
+    server.transcribe_raw({**server.DEFAULT_CONFIG, "vocabulary": []}, b"RIFF")
+    assert "initial_prompt" not in captured
+
+
+def test_settings_expose_and_update_vocabulary():
+    assert client.get("/settings", headers=AUTH).json()["vocabulary"] == []
+    assert "styles" in client.get("/settings", headers=AUTH).json()
+
+    r = client.patch("/settings", headers=AUTH, json={"vocabulary": ["VozLab", "vozlab", "Diego"]})
+    assert r.status_code == 200
+    assert r.json()["applied"]["vocabulary"] == ["VozLab", "Diego"]
+    assert client.get("/settings", headers=AUTH).json()["vocabulary"] == ["VozLab", "Diego"]
+
+
+def test_discovery_reply_leaks_nothing():
+    import json as _json
+    server._state["device"] = "cuda"
+    payload = _json.loads(server._discovery_payload())
+    assert payload["name"] == "vozlab"
+    assert payload["port"] == int(server.PUBLIC_PORT)
+    assert set(payload) <= {"name", "version", "api", "port", "tls", "whisper_model", "device"}
+    blob = _json.dumps(payload)
+    assert server._state["config"]["token"] not in blob
+    assert "token" not in payload
+
+
+def test_status_reports_tls_state(monkeypatch):
+    monkeypatch.delenv("VOZLAB_TLS_CERT", raising=False)
+    assert client.get("/status", headers=AUTH).json()["tls"] is False
+    monkeypatch.setenv("VOZLAB_TLS_CERT", "/data/tls/cert.pem")
+    assert client.get("/status", headers=AUTH).json()["tls"] is True
+
+
+def test_run_server_ssl_kwargs():
+    import importlib
+    import run_server
+
+    importlib.reload(run_server)
+    assert run_server.ssl_kwargs() == {}          # no cert configured
+
+    os.environ["VOZLAB_TLS_CERT"] = "/data/tls/cert.pem"
+    try:
+        assert run_server.ssl_kwargs() == {
+            "ssl_certfile": "/data/tls/cert.pem", "ssl_keyfile": "/data/tls/cert.pem"}
+        os.environ["VOZLAB_TLS_KEY"] = "/data/tls/key.pem"
+        assert run_server.ssl_kwargs()["ssl_keyfile"] == "/data/tls/key.pem"
+    finally:
+        os.environ.pop("VOZLAB_TLS_CERT", None)
+        os.environ.pop("VOZLAB_TLS_KEY", None)

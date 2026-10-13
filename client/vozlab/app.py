@@ -12,7 +12,8 @@ import keyboard
 import pyperclip
 
 from . import APP_NAME, VERSION
-from . import audio, config as cfgmod, hotkeys, i18n, log, tray, updater
+from . import (audio, config as cfgmod, hotkeys, i18n, log, platform_info, profiles,
+               tray, updater)
 from .api import ApiError, VozLabAPI
 from .ui import about as about_ui
 from .ui import pill as pill_ui
@@ -66,7 +67,8 @@ class VozLabApp:
 
         self.state = "idle"
         self.recorder: audio.Recorder | None = None
-        self.api = VozLabAPI(cfgmod.server_url(self.cfg), self.cfg.get("token", ""))
+        self.api = VozLabAPI(cfgmod.server_url(self.cfg), self.cfg.get("token", ""),
+                             fingerprint=self.cfg.get("tls_pin", ""))
         self._last_level_post = 0.0
 
         self.overlay = pill_ui.PillOverlay(self.root, self.cfg) if self.cfg.get("show_pill") else None
@@ -348,15 +350,21 @@ class VozLabApp:
         if self.overlay:
             self.overlay.transcribing(self.tr("state_transcribing"))
 
-        threading.Thread(target=self._transcribe_thread, args=(wav,), daemon=True).start()
+        # decide the writing style *now*: the app in the foreground is where the
+        # text is about to land
+        style = profiles.style_for_now(self.cfg)
+        self._log(f"style for this dictation: {style}")
+        threading.Thread(target=self._transcribe_thread, args=(wav, style),
+                         daemon=True).start()
 
-    def _transcribe_thread(self, wav: bytes) -> None:
+    def _transcribe_thread(self, wav: bytes, style: str = "default") -> None:
         t0 = time.time()
         try:
             out = self.api.transcribe(
                 wav,
                 cleanup=self.cfg.get("cleanup", True),
                 language=self.cfg.get("language", "auto"),
+                style=style,
             )
         except ApiError as err:
             self.post(lambda err=err: self._transcribe_failed(err))
@@ -403,7 +411,7 @@ class VozLabApp:
         try:
             pyperclip.copy(text)
             time.sleep(0.05)
-            keyboard.send("ctrl+v")
+            keyboard.send(platform_info.paste_shortcut())
         except Exception as e:  # noqa: BLE001
             self._notify_error(self.tr("err_generic", error=e))
             return
@@ -475,7 +483,8 @@ class VozLabApp:
         cfgmod.save(cfg)
         log.set_secrets([cfg.get("token")])
         self.tr.set_language(cfg.get("ui_language", "auto"))
-        self.api = VozLabAPI(cfgmod.server_url(cfg), cfg.get("token", ""))
+        self.api = VozLabAPI(cfgmod.server_url(cfg), cfg.get("token", ""),
+                             fingerprint=cfg.get("tls_pin", ""))
         self.hotkeys.set_hotkey(cfg.get("hotkey"))
         self.hotkeys.debug_log = self._log if cfg.get("debug") else None
         try:

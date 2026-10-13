@@ -33,9 +33,15 @@ DEFAULTS = {
     "cleanup": True,            # run the LLM formatting pass
     "cleanup_guard": True,      # keep the raw text if the cleanup model rewrites it
     "language": "auto",         # language hint sent to the server ("auto", "en", "es", ...)
+    "style": "default",         # writing style: default | formal | casual | concise | bullets
+    "per_app_profiles": True,   # pick the style from the app you are typing into
+    "profiles": None,           # None = profiles.DEFAULT_PROFILES; otherwise {app: style}
+    "vocabulary": [],           # names/terms the server should expect (also biases Whisper)
     "beeps": False,             # sound feedback — off by default, toggle in Settings
     "restore_clipboard": True,
     "debug": False,
+    # security
+    "tls_pin": "",              # SHA-256 of the server certificate (https only)
     # ui
     "ui_language": "auto",      # "auto" (follow Windows), "en", "es"
     "theme": "dark",            # dark | light | system
@@ -115,6 +121,13 @@ def save(cfg: dict) -> None:
     except OSError:
         pass
     os.replace(tmp, config_path())
+
+
+def profiles_map(cfg: dict) -> dict:
+    """The per-app profile map, falling back to the shipped defaults."""
+    from .profiles import DEFAULT_PROFILES
+    value = cfg.get("profiles")
+    return dict(value) if value else dict(DEFAULT_PROFILES)
 
 
 def server_url(cfg: dict) -> str:

@@ -12,6 +12,10 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cleanup import (  # noqa: E402
+    STYLES,
+    build_prompt,
+    normalize_style,
+    sanitize_vocabulary,
     DEFAULT_CLEANUP_PROMPT,
     cleanup_ok,
     strip_decoration,
@@ -106,3 +110,58 @@ def test_prompt_forbids_conversation():
     # the prompt must include a question example, since that is the failure mode
     assert "are you responding to me" in prompt
     assert "never translate" in prompt
+
+
+# ------------------------------------------------- styles & custom vocabulary --
+
+
+def test_styles_are_small_predictable_instructions():
+    assert set(STYLES) >= {"default", "formal", "casual", "concise", "bullets"}
+    assert STYLES["default"] == ""
+    # a style must never invite the model to add words
+    for name, text in STYLES.items():
+        lowered = text.lower()
+        assert "add " not in lowered or "never" in lowered or "do not add" in lowered, name
+
+
+def test_normalize_style_falls_back_for_unknown_values():
+    assert normalize_style("formal") == "formal"
+    assert normalize_style("chat") == "default"      # server only knows real styles
+    assert normalize_style(None) == "default"
+    assert normalize_style("") == "default"
+    assert normalize_style("BULLETS") == "default"   # case-sensitive on purpose
+
+
+def test_build_prompt_keeps_the_base_rules():
+    prompt = build_prompt(DEFAULT_CLEANUP_PROMPT, "formal")
+    assert "not a chat" in prompt.lower()
+    assert "formal" in prompt.lower()
+
+
+def test_build_prompt_default_style_is_just_the_base():
+    assert build_prompt(DEFAULT_CLEANUP_PROMPT, "default").strip() \
+        == DEFAULT_CLEANUP_PROMPT.strip()
+
+
+def test_build_prompt_lists_vocabulary_without_inviting_extra_words():
+    prompt = build_prompt(DEFAULT_CLEANUP_PROMPT, "default", ["VozLab", "Diego"])
+    assert "VozLab, Diego" in prompt
+    assert "never insert" in prompt.lower()
+
+
+def test_sanitize_vocabulary_dedupes_and_trims():
+    assert sanitize_vocabulary([" VozLab ", "vozlab", "Diego,"]) == ["VozLab", "Diego"]
+    assert sanitize_vocabulary("VozLab, Diego;  ") == ["VozLab", "Diego"]
+    assert sanitize_vocabulary([]) == []
+    assert sanitize_vocabulary(None) == []
+    assert sanitize_vocabulary(["   ", "x"]) == ["x"]
+
+
+def test_sanitize_vocabulary_caps_the_list():
+    from cleanup import MAX_VOCABULARY_TERMS
+    terms = sanitize_vocabulary([f"term{i}" for i in range(MAX_VOCABULARY_TERMS + 50)])
+    assert len(terms) == MAX_VOCABULARY_TERMS
+
+
+def test_sanitize_vocabulary_truncates_absurd_terms():
+    assert sanitize_vocabulary(["x" * 500])[0] == "x" * 60

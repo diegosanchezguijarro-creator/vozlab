@@ -21,7 +21,7 @@ Cheap liveness probe. No authentication, and **deliberately minimal** — nothin
 that helps an unauthenticated scanner (no models, no device, no settings):
 
 ```json
-{ "ok": true, "version": "1.3.0", "api": 1 }
+{ "ok": true, "version": "1.4.0", "api": 1 }
 ```
 
 Set `"expose_details": true` in `server/data/config.json` (or
@@ -31,7 +31,7 @@ Set `"expose_details": true` in `server/data/config.json` (or
 ## `GET /version`
 
 ```json
-{ "name": "vozlab", "version": "1.3.0", "api": 1 }
+{ "name": "vozlab", "version": "1.4.0", "api": 1 }
 ```
 
 The client compares `version` with its own and warns when major.minor differ, so
@@ -43,7 +43,7 @@ Everything the desktop app shows on its Server tab, in one call (authenticated):
 
 ```json
 {
-  "name": "vozlab", "version": "1.3.0", "api": 1,
+  "name": "vozlab", "version": "1.4.0", "api": 1,
   "whisper_model": "small", "language": "auto",
   "cleanup": true, "cleanup_model": "qwen2.5:7b-instruct",
   "device": "cuda", "uptime_s": 812, "requests": 24,
@@ -51,6 +51,7 @@ Everything the desktop app shows on its Server tab, in one call (authenticated):
   "ollama_models": ["qwen2.5:7b-instruct", "llama3.1:8b"],
   "gpu": { "name": "NVIDIA GeForce RTX 4060", "memory_total_mb": 8188, "memory_used_mb": 4666 },
   "reloading": false,
+  "tls": false,
   "auth": { "role": "device", "device": "diego-laptop" }
 }
 ```
@@ -66,6 +67,7 @@ The only real endpoint: audio in, text out.
 | Body | raw audio bytes (WAV, MP3, OGG, FLAC — anything PyAV can decode) |
 | Query | `cleanup=true\|false` (default: server setting) |
 | Query | `language=en\|es\|auto…` (default: server setting) |
+| Query | `style=default\|formal\|casual\|concise\|bullets` (unknown values fall back to `default`) |
 | Header | `Authorization: Bearer <token>` |
 | Header | `Content-Type: audio/wav` |
 | Limit | 25 MB per request |
@@ -85,10 +87,14 @@ curl -X POST "http://192.168.0.23:8092/transcribe?cleanup=true" \
   "raw_text": "um the meeting is moved to monday",
   "cleanup_used": true,
   "cleanup_rejected": null,
+  "style": "default",
   "language": "en",
   "timings": { "whisper_s": 0.41, "cleanup_s": 0.26, "total_s": 0.69 }
 }
 ```
+
+`style` is echoed back (the value actually used), so the app can log which profile
+was applied.
 
 - `text` — what the client pastes. Equals `raw_text` when cleanup is off, failed,
   or was rejected by the guard.
@@ -118,10 +124,12 @@ The settings that are safe to hand to a client — **never the token**:
 ```json
 {
   "whisper_model": "small", "language": "auto", "compute_type": "int8_float16",
-  "beam_size": 5, "cleanup": true, "cleanup_guard": true,
+  "beam_size": 5, "vad_filter": true, "cleanup": true, "cleanup_guard": true,
   "cleanup_model": "qwen2.5:7b-instruct",
   "cleanup_base_url": "http://host.docker.internal:11434",
   "cleanup_temperature": 0.0, "cleanup_max_tokens": 500,
+  "vocabulary": ["VozLab", "Diego"],
+  "styles": ["bullets", "casual", "concise", "default", "formal"],
   "expose_details": false, "token_set": true, "config_path": "/data/config.json"
 }
 ```
@@ -138,7 +146,8 @@ curl -X PATCH http://192.168.0.23:8092/settings \
 ```
 
 Editable: `whisper_model`, `language`, `cleanup`, `cleanup_model`,
-`cleanup_guard`, `beam_size` (clamped 1–10), `compute_type`, `expose_details`.
+`cleanup_guard`, `beam_size` (clamped 1–10), `compute_type`, `expose_details`,
+`vad_filter`, `vocabulary` (list or `"a, b"`; de-duplicated, max 200 terms).
 Anything else (including `token`) is ignored, and a request that changes nothing
 returns `400`. Changing the speech model reloads Whisper in the background; watch
 `reloading` in `/status`.
@@ -186,6 +195,20 @@ others. Only a salted SHA-256 hash is stored on the server.
 
 The admin token (`config.json`, `/tokens`, `/settings`) cannot be revoked this
 way — rotate it by editing the file and restarting.
+
+## LAN discovery (UDP, not HTTP)
+
+The app can find the server without being told an IP address. Send
+`VOZLAB/1 discover\n` to UDP **8093** (broadcast, or the subnet broadcast
+address) and every VozLab server on the network answers with a small JSON object:
+
+```json
+{ "name": "vozlab", "version": "1.4.0", "api": 1, "port": 8092,
+  "tls": false, "whisper_model": "small", "device": "cuda" }
+```
+
+There is **no token and no settings** in the reply, so discovery cannot be used to
+dictate. Disable it with `VOZLAB_DISCOVERY_PORT=0` (or `"discovery": false`).
 
 ## Example: fully scripted setup
 

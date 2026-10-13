@@ -92,40 +92,35 @@ def test_i18n_translations_and_fallback():
 
 # ------------------------------------------------------------------ api -----
 def _fake_requests(monkeypatch, status=200, payload=None, raise_exc=None):
+    """Intercept every request: the client goes through one Session (for pinning),
+    and requests' Session.get/post all funnel into Session.request."""
     import requests as real_requests
-
-    from vozlab import api as apimod
 
     class Resp:
         def __init__(self, status_code, payload):
             self.status_code = status_code
             self._payload = payload
             self.text = json.dumps(payload or {})
+            self.content = self.text.encode()
 
         def json(self):
             return self._payload
 
     calls = {}
 
-    def fake_get(url, headers=None, timeout=None):
+    def fake_request(self, method, url, headers=None, params=None, data=None,
+                     json=None, timeout=None, **kwargs):
+        calls["method"] = method
         calls["url"] = url
         calls["headers"] = headers
-        if raise_exc:
-            raise raise_exc
-        return Resp(status, payload)
-
-    def fake_post(url, params=None, headers=None, data=None, timeout=None):
-        calls["url"] = url
         calls["params"] = params
-        calls["data_len"] = len(data or b"")
-        calls["headers"] = headers
+        if data is not None:
+            calls["data_len"] = len(data)
         if raise_exc:
             raise raise_exc
         return Resp(status, payload)
 
-    monkeypatch.setattr(apimod.requests, "get", fake_get)
-    monkeypatch.setattr(apimod.requests, "post", fake_post)
-    monkeypatch.setattr(apimod.requests, "RequestException", real_requests.RequestException)
+    monkeypatch.setattr(real_requests.Session, "request", fake_request)
     return calls
 
 

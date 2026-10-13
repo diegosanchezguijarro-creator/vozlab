@@ -17,12 +17,19 @@ services:
     restart: unless-stopped
     ports:
       - "8092:8080"
+      - "8093:8093/udp"              # LAN discovery probes
     volumes:
       - ./data:/data
     environment:
       # the sibling ollama service, not the host
       - VOZLAB_CLEANUP_BASE_URL=http://ollama:11434
       - VOZLAB_CLEANUP_MODEL=${VOZLAB_CLEANUP_MODEL:-qwen2.5:7b-instruct}
+      # the port the app should use (the published one, not the container's 8080)
+      - VOZLAB_PUBLIC_PORT=8092
+      # set by `install.sh --tls` through ./.env; empty means plain HTTP
+      - VOZLAB_TLS_CERT=${VOZLAB_TLS_CERT:-}
+      - VOZLAB_TLS_KEY=${VOZLAB_TLS_KEY:-}
+
     depends_on:
       - ollama
     user: "1000:1000"

@@ -68,11 +68,20 @@ server — no SSH, no container restart.
 |---|---|
 | Format text with the local AI | off = raw Whisper output (fastest) |
 | Never rewrite my words | if the formatter invents or drops words, your raw text is used instead |
+| Writing style | `Default`, `Formal (email)`, `Casual (chat)`, `Concise`, `Bullet lists` — a tone hint for the formatter |
+| Adjust the style per app | switch styles automatically based on the app you are typing into |
+| Per-app rules | e.g. `slack.exe → Casual`, `outlook.exe → Formal`; **Use the app I'm in now** detects the current one |
+| Names and terms | your name, company and product names. Comma-separated; they bias Whisper's recognition and the spell-checking, and are **Save**d to the server. They are never inserted into your text for you |
+
+Styles only change *how* the text is written. The guard still rejects any rewrite
+that adds or drops words, so a wrong profile can never corrupt a dictation.
 
 ### Server
 | Setting | Notes |
 |---|---|
+| Find my server | broadcasts a UDP probe and lists VozLab servers on your network (no IP hunting) |
 | Server URL / Token | where your server lives; use **Test connection**; the token is stored encrypted |
+| Pinned certificate | with `https://` the app remembers the server certificate on first connect; **Re-pin** after re-installing the server, **Forget** to clear it |
 | Speech model | `tiny` → `large-v3`; changing it reloads Whisper in the background |
 | Formatting model | any model already pulled on your Ollama host |
 | Apply to server / Load into memory / Run full test | change settings live, warm a model, and verify the whole chain with a built-in sample |

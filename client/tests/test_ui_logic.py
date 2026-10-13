@@ -166,3 +166,41 @@ def test_every_config_default_survives_a_json_roundtrip(tmp_path, monkeypatch):
     cfgmod.save(dict(cfgmod.DEFAULTS))
     raw = json.loads((tmp_path / "config.json").read_text())
     assert set(raw) <= set(cfgmod.DEFAULTS)
+
+
+# ------------------------------------------------------------ platform -----
+
+
+def test_paste_shortcut_is_platform_aware(monkeypatch):
+    import importlib
+
+    from vozlab import platform_info
+
+    monkeypatch.setattr(platform_info.sys, "platform", "darwin")
+    importlib.reload(platform_info)
+    assert platform_info.paste_shortcut() == "command+v"
+    assert platform_info.secrets_are_encrypted() is False
+    assert "Accessibility" in platform_info.hotkey_note()
+
+    monkeypatch.setattr(platform_info.sys, "platform", "win32")
+    importlib.reload(platform_info)
+    assert platform_info.paste_shortcut() == "ctrl+v"
+    assert platform_info.secrets_are_encrypted() is True
+    assert platform_info.tray_backend() == "win32"
+    assert platform_info.hotkey_note() == ""
+
+    monkeypatch.setattr(platform_info.sys, "platform", "linux")
+    importlib.reload(platform_info)
+    assert platform_info.tray_backend() == "xorg"
+    assert "/dev/input" in platform_info.hotkey_note()
+
+    importlib.reload(platform_info)      # leave the real platform in place
+
+
+def test_diagnostics_mention_capabilities(tmp_path, monkeypatch):
+    from vozlab import config as cfgmod
+    from vozlab import diagnostics
+
+    report = diagnostics.build_report(dict(cfgmod.DEFAULTS), extra={"os": "test"})
+    assert "Capabilities" in report
+    assert "global hotkeys" in report

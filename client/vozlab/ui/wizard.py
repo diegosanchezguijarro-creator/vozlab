@@ -96,6 +96,23 @@ class Wizard:
         tr = self.app.tr
         card = widgets.Card(self.body, tr("group_connection"))
         card.pack(fill="x")
+
+        # --- find the server automatically ---------------------------------
+        find_row = ctk.CTkFrame(card.body, fg_color="transparent")
+        find_row.pack(fill="x", pady=(0, theme.PAD_S))
+        self.find_btn = ctk.CTkButton(
+            find_row, text=tr("wizard_find_server"), height=36, width=180,
+            corner_radius=theme.RADIUS_CONTROL, fg_color=theme.SURFACE_2,
+            border_width=1, border_color=theme.BORDER, hover_color=theme.BORDER,
+            font=theme.font(12), command=self._find_servers)
+        self.find_btn.pack(side="left")
+        self.find_label = ctk.CTkLabel(find_row, text=tr("wizard_find_hint"),
+                                       font=theme.font(11), text_color=theme.TEXT_FAINT,
+                                       wraplength=300, justify="left")
+        self.find_label.pack(side="left", padx=10)
+        # created lazily: an empty CTkFrame keeps its default 200px height
+        self.found_box = ctk.CTkFrame(card.body, fg_color="transparent")
+
         self.server_field = widgets.Field(card.body, tr("settings_server"),
                                           cfgmod.server_url(self.cfg) or "http://",
                                           placeholder="http://192.168.0.23:8092", width=500)
@@ -104,6 +121,16 @@ class Wizard:
                                          self.cfg.get("token", ""),
                                          placeholder=tr("wizard_token_hint"), width=500)
         self.token_field.pack(fill="x", pady=(theme.PAD_S, 0))
+
+        # --- certificate pinning (https only) ------------------------------
+        self.pin_card = ctk.CTkFrame(card.body, fg_color=theme.SURFACE_2,
+                                     corner_radius=theme.RADIUS_CONTROL,
+                                     border_width=1, border_color=theme.BORDER)
+        self.pin_label = ctk.CTkLabel(self.pin_card, text="", font=theme.font(11),
+                                      text_color=theme.TEXT_MUTED, justify="left",
+                                      wraplength=460, anchor="w")
+        self.pin_label.pack(anchor="w", padx=12, pady=10)
+        # packed only when there is a certificate to talk about
 
         row = ctk.CTkFrame(card.body, fg_color="transparent")
         row.pack(fill="x", pady=(theme.PAD_S, 0))
@@ -121,6 +148,123 @@ class Wizard:
         ctk.CTkLabel(self.body, text=tr("wizard_token_where"), font=theme.font(11),
                      text_color=theme.TEXT_FAINT, justify="left", wraplength=520).pack(
             anchor="w", pady=(theme.PAD_S, 0))
+
+    # -- LAN discovery -------------------------------------------------------
+    def _find_servers(self):
+        """Broadcast a probe and list the servers that answer."""
+        tr = self.app.tr
+        from .. import discovery
+
+        self.find_btn.configure(state="disabled")
+        self.find_label.configure(text=tr("wizard_searching"), text_color=theme.TEXT_MUTED)
+
+        def run():
+            found = discovery.discover()
+
+            def show():
+                self.find_btn.configure(state="normal")
+                for child in self.found_box.winfo_children():
+                    child.destroy()
+                if not found:
+                    self.found_box.pack_forget()
+                    self.find_label.configure(text=tr("wizard_find_none"),
+                                              text_color=theme.WARN)
+                    return
+                self.found_box.pack(fill="x", pady=(theme.PAD_S, 0))
+                self.find_label.configure(
+                    text=tr("wizard_find_count", count=len(found)), text_color=theme.TEXT_MUTED)
+                for entry in found:
+                    label = f"{entry['url']}"
+                    if entry.get("version"):
+                        label += f"  ·  v{entry['version']}"
+                    if entry.get("device"):
+                        label += f"  ·  {entry['device']}"
+                    ctk.CTkButton(
+                        self.found_box, text=label, height=32, anchor="w",
+                        font=theme.font(12), corner_radius=theme.RADIUS_CONTROL,
+                        fg_color=theme.SURFACE_2, border_width=1, border_color=theme.BORDER,
+                        hover_color=theme.BORDER,
+                        command=lambda u=entry["url"]: self._use_found(u)).pack(
+                        fill="x", pady=2)
+            self.app.post(show)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _use_found(self, url: str) -> None:
+        self.server_field.set(url)
+        self.find_label.configure(text=url, text_color=theme.OK)
+        if url.startswith("https://"):
+            self._offer_pinning(url)
+
+    def _offer_pinning(self, url: str) -> None:
+        """https: look at the certificate and remember it (trust on first use)."""
+        tr = self.app.tr
+        from .. import api as apimod
+
+        self.pin_label.configure(text=tr("wizard_pin_checking"), text_color=theme.TEXT_MUTED)
+        self.pin_card.pack(fill="x", pady=(theme.PAD_S, 0))
+        cfg = dict(self.cfg)
+        cfgmod.parse_server_url(url, cfg)
+
+        def run():
+            try:
+                fingerprint = apimod.fetch_fingerprint(cfg["server_host"], cfg["server_port"])
+            except (OSError, ValueError) as err:
+                # capture as a default arg: `err` dies with the except block
+                self.app.post(lambda err=err: self.pin_label.configure(
+                    text=tr("wizard_pin_failed", error=err), text_color=theme.ERROR))
+                return
+
+            def show():
+                self.cfg["tls_pin"] = fingerprint
+                self.pin_label.configure(
+                    text=tr("wizard_pin_remembered",
+                            fingerprint=apimod.format_fingerprint(fingerprint)),
+                    text_color=theme.OK)
+            self.app.post(show)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _test(self):
+        tr = self.app.tr
+        self.test_label.configure(text="…", text_color=theme.TEXT_MUTED)
+        self.test_btn.configure(state="disabled")
+        cfg = dict(self.cfg)
+        cfgmod.parse_server_url(self.server_field.get(), cfg)
+        token = self.token_field.get()
+        base = cfgmod.server_url(cfg)
+        if base.startswith("https://") and not self.cfg.get("tls_pin"):
+            # https without a pin: remember the certificate before trusting it
+            self._offer_pinning(base)
+
+        def run():
+            api = VozLabAPI(base, token, fingerprint=self.cfg.get("tls_pin", ""))
+            try:
+                try:
+                    info = api.status()
+                except ApiError as e:
+                    if e.kind != "server":       # older server without /status
+                        raise
+                    info = api.health()
+                model = info.get("whisper_model") or "?"
+                device = info.get("device") or "?"
+                msg = tr("wizard_test_ok", model=model, device=device)
+                color = theme.OK
+                if info.get("tls"):
+                    msg += "  ·  " + tr("wizard_pinned_ok")
+            except ApiError as e:
+                kind = {"unreachable": "err_server_unreachable",
+                        "bad_token": "err_bad_token",
+                        "bad_cert": "err_bad_cert"}.get(e.kind)
+                msg = tr(kind, error=e.detail) if kind else tr("err_generic", error=e.detail)
+                color = theme.ERROR
+
+            def done():
+                self.test_label.configure(text=msg, text_color=color)
+                self.test_btn.configure(state="normal")
+            self.app.post(done)
+
+        threading.Thread(target=run, daemon=True).start()
 
     def _step_hotkey(self):
         tr = self.app.tr

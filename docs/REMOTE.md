@@ -55,8 +55,54 @@ Only if you understand the trade-offs. Minimum requirements:
 Even then, remember that anyone who obtains the token can send audio to your
 server. A VPN avoids the whole question.
 
-## Why the client can't "just" do HTTPS for you
+## HTTPS with a pinned certificate
 
-Certificate pinning (trust-on-first-use) is on the roadmap: it will let the
-Windows app talk to a self-signed HTTPS server without a browser-style
-certificate warning. Until then, use a VPN or a real certificate via Caddy.
+New in 1.4.0: the server can speak HTTPS with a self-signed certificate, and the
+Windows app **pins** it. There is no CA, no browser warning and no certificate to
+renew — the app remembers the certificate the first time it connects and refuses
+anything else afterwards.
+
+```bash
+# on the server
+cd ~/vozlab/server
+bash install.sh --with-ai --tls          # or: bash install.sh --tls
+```
+
+That generates `data/tls/cert.pem` (+ key), writes `server/.env` so Compose
+passes `VOZLAB_TLS_CERT`/`VOZLAB_TLS_KEY` to the container, and prints the
+certificate fingerprint:
+
+```
+  Server URL : https://192.168.0.23:8092
+  Token      : …
+  Certificate : 26:AE:6E:DD:…:5A:E7
+```
+
+In the app: **Settings → Server → Server URL** = `https://192.168.0.23:8092`,
+then press **Test connection**. The first time, the app reads the certificate and
+shows it as pinned; compare the fingerprint with the one `install.sh` printed if
+you want certainty about *which* server you just trusted.
+
+What pinning does and does not do:
+
+| | |
+|---|---|
+| Protects against | passive sniffing on the network, a rogue device answering on the server's IP, a hijacked DNS/ARP reply |
+| Does not protect against | someone holding the laptop (the pin is in `config.json`), or a compromised server |
+| If the certificate changes | the app **stops connecting** and says so. Re-generate or re-pin: *Settings → Server → Re-pin certificate* |
+
+Everything else on this page (Tailscale, WireGuard) still works, and a VPN
+remains the right answer for dictating from outside your home network.
+
+## LAN discovery
+
+The server answers a UDP probe on port 8093 (name, version, HTTP port, TLS flag —
+**no token, no settings**). *Settings → Server → Find my server* broadcasts that
+probe and lists what answers, so you never have to look up an IP address:
+
+```
+Find my server →  http://192.168.0.23:8092  ·  v1.4.0  ·  cuda
+```
+
+Nobody can use it to dictate: the reply contains no credential. Turn it off with
+`VOZLAB_DISCOVERY_PORT=0` or `"discovery": false` in `server/data/config.json`.

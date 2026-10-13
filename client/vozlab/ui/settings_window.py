@@ -325,6 +325,140 @@ class SettingsWindow:
                                                  self.cfg.get("cleanup_guard", True),
                                                  tr("settings_cleanup_guard_hint"))
 
+        self.style_names = {
+            tr("style_default"): "default",
+            tr("style_formal"): "formal",
+            tr("style_casual"): "casual",
+            tr("style_concise"): "concise",
+            tr("style_bullets"): "bullets",
+        }
+        style_reverse = {v: k for k, v in self.style_names.items()}
+        self.style_menu = self._option_row(
+            card.body, tr("settings_style"), list(self.style_names),
+            style_reverse.get(self.cfg.get("style", "default"), list(self.style_names)[0]),
+            width=200)
+        ctk.CTkLabel(card.body, text=tr("settings_style_hint"), font=theme.font(11),
+                     text_color=theme.TEXT_FAINT, justify="left", wraplength=470).pack(anchor="w")
+
+        # --- per-app profiles ------------------------------------------------
+        profiles_card = widgets.Card(parent, tr("group_profiles"), tr("group_profiles_hint"))
+        profiles_card.pack(fill="x", pady=(0, theme.PAD_S))
+        self.per_app_switch = self._switch(profiles_card.body, tr("settings_per_app"),
+                                           self.cfg.get("per_app_profiles", True))
+
+        self._profile_rules = dict(cfgmod.profiles_map(self.cfg))
+        self.rules_box = ctk.CTkFrame(profiles_card.body, fg_color="transparent")
+        self.rules_box.pack(fill="x", pady=(theme.PAD_S, 0))
+
+        add_row = ctk.CTkFrame(profiles_card.body, fg_color="transparent")
+        add_row.pack(fill="x", pady=(theme.PAD_S, 0))
+        self.app_var = ctk.StringVar(value="")
+        ctk.CTkEntry(add_row, textvariable=self.app_var, width=170, height=32,
+                     placeholder_text="slack.exe", font=theme.font(12),
+                     corner_radius=theme.RADIUS_CONTROL, fg_color=theme.SURFACE_2,
+                     border_color=theme.BORDER, border_width=1,
+                     text_color=theme.TEXT).pack(side="left")
+        self.new_style = ctk.CTkOptionMenu(
+            add_row, values=list(self.style_names), height=32, width=140,
+            font=theme.font(12), corner_radius=theme.RADIUS_CONTROL,
+            fg_color=theme.SURFACE_2, button_color=theme.SURFACE_2,
+            button_hover_color=theme.BORDER, dropdown_fg_color=theme.SURFACE_2,
+            dropdown_hover_color=theme.BORDER)
+        self.new_style.set(tr("style_default"))
+        self.new_style.pack(side="left", padx=8)
+        self._button(add_row, tr("settings_add_rule"), self._add_rule, 110).pack(side="left")
+        self._button(add_row, tr("settings_use_current_app"),
+                     self._use_current_app, 190).pack(side="left", padx=8)
+        self.rules_label = ctk.CTkLabel(profiles_card.body, text="", font=theme.font(11),
+                                        text_color=theme.TEXT_MUTED, wraplength=470,
+                                        justify="left")
+        self.rules_label.pack(anchor="w", pady=(6, 0))
+        self._render_rules()
+
+        # --- custom vocabulary ----------------------------------------------
+        vocab_card = widgets.Card(parent, tr("group_vocabulary"), tr("group_vocabulary_hint"))
+        vocab_card.pack(fill="x", pady=(0, theme.PAD_S))
+        self.vocab_box = ctk.CTkTextbox(vocab_card.body, height=80, font=theme.font(12),
+                                        fg_color=theme.SURFACE_2,
+                                        border_color=theme.BORDER, border_width=1,
+                                        text_color=theme.TEXT)
+        self.vocab_box.pack(fill="x")
+        self.vocab_box.insert("1.0", ", ".join(self.cfg.get("vocabulary") or []))
+        vocab_row = ctk.CTkFrame(vocab_card.body, fg_color="transparent")
+        vocab_row.pack(fill="x", pady=(theme.PAD_S, 0))
+        self._button(vocab_row, tr("settings_save_vocabulary"),
+                     self._save_vocabulary, 190, accent=True).pack(side="left")
+        self.vocab_label = ctk.CTkLabel(vocab_row, text="", font=theme.font(11),
+                                        text_color=theme.TEXT_MUTED, wraplength=330,
+                                        justify="left")
+        self.vocab_label.pack(side="left", padx=10)
+
+    def _render_rules(self):
+        for child in self.rules_box.winfo_children():
+            child.destroy()
+        tr = self.app.tr
+        reverse = {v: k for k, v in self.style_names.items()}
+        if not self._profile_rules:
+            ctk.CTkLabel(self.rules_box, text=tr("settings_no_rules"),
+                         font=theme.font(11), text_color=theme.TEXT_FAINT).pack(anchor="w")
+            return
+        for app, style in sorted(self._profile_rules.items()):
+            row = ctk.CTkFrame(self.rules_box, fg_color="transparent")
+            row.pack(fill="x", pady=1)
+            ctk.CTkLabel(row, text=f"{app}  →  {reverse.get(style, style)}",
+                         font=theme.font(11), text_color=theme.TEXT_MUTED).pack(side="left")
+            self._button(row, tr("settings_remove"), lambda a=app: self._remove_rule(a),
+                         90).pack(side="right")
+
+    def _add_rule(self):
+        app = self.app_var.get().strip()
+        if not app:
+            return
+        self._profile_rules[app] = self.style_names.get(self.new_style.get(), "default")
+        self.app_var.set("")
+        self._render_rules()
+        self._mark_dirty()
+
+    def _remove_rule(self, app: str):
+        self._profile_rules.pop(app, None)
+        self._render_rules()
+        self._mark_dirty()
+
+    def _use_current_app(self):
+        """Create a rule for the window that has focus right now."""
+        from .. import foreground
+        tr = self.app.tr
+        app = foreground.foreground_app()
+        if not app:
+            self.rules_label.configure(text=tr("settings_no_foreground"),
+                                       text_color=theme.WARN)
+            return
+        self.app_var.set(app)
+        self.rules_label.configure(text=tr("settings_detected_app", app=app),
+                                   text_color=theme.OK)
+
+    def _save_vocabulary(self):
+        """Send the term list to the server (it biases Whisper and the formatter)."""
+        tr = self.app.tr
+        terms = [t.strip() for t in self.vocab_box.get("1.0", "end")
+                 .replace(";", ",").split(",") if t.strip()]
+        self.cfg["vocabulary"] = terms
+        self.vocab_label.configure(text=tr("settings_vocabulary_saving"),
+                                   text_color=theme.TEXT_MUTED)
+        api = self._new_api()
+
+        def run():
+            try:
+                out = api.patch_settings({"vocabulary": terms})
+                saved = out.get("applied", {}).get("vocabulary", terms)
+                msg, color = tr("settings_vocabulary_saved", count=len(saved)), theme.OK
+            except ApiError as e:
+                msg, color = tr("settings_vocabulary_local", error=e.detail), theme.WARN
+            self.app.post(lambda: self.vocab_label.configure(text=msg, text_color=color))
+
+        threading.Thread(target=run, daemon=True).start()
+        self._mark_dirty()
+
     # ---------------------------------------------------------------- server --
     def _build_server(self, parent):
         tr = self.app.tr
@@ -347,11 +481,30 @@ class SettingsWindow:
 
         row = ctk.CTkFrame(conn.body, fg_color="transparent")
         row.pack(fill="x", pady=(theme.PAD_S, 0))
-        self._button(row, tr("wizard_test"), self._test, 140).pack(side="left")
+        self._button(row, tr("wizard_find_server"), self._find_servers, 160).pack(side="left")
+        self._button(row, tr("wizard_test"), self._test, 140).pack(side="left", padx=8)
         self.test_label = ctk.CTkLabel(row, text="", font=theme.font(12),
-                                       text_color=theme.TEXT_MUTED, wraplength=380,
+                                       text_color=theme.TEXT_MUTED, wraplength=360,
                                        justify="left")
-        self.test_label.pack(side="left", padx=12)
+        self.test_label.pack(side="left", padx=4)
+
+        # created lazily: an empty CTkFrame keeps its default 200px height
+        self.found_box = ctk.CTkFrame(conn.body, fg_color="transparent")
+
+        # --- certificate pinning --------------------------------------------
+        self.pin_card = ctk.CTkFrame(conn.body, fg_color=theme.SURFACE_2,
+                                     corner_radius=theme.RADIUS_CONTROL,
+                                     border_width=1, border_color=theme.BORDER)
+        self.pin_label = ctk.CTkLabel(self.pin_card, text="", font=theme.font(11),
+                                      text_color=theme.TEXT_MUTED, justify="left",
+                                      wraplength=420, anchor="w")
+        self.pin_label.pack(anchor="w", padx=12, pady=(10, 6))
+        pin_row = ctk.CTkFrame(self.pin_card, fg_color="transparent")
+        pin_row.pack(anchor="w", padx=12, pady=(0, 10))
+        self._button(pin_row, tr("settings_repin"), self._repin, 150).pack(side="left")
+        self._button(pin_row, tr("settings_forget_cert"), self._forget_pin, 170).pack(
+            side="left", padx=8)
+        self._render_pin()
 
         # --- remote settings ---------------------------------------------------
         remote = widgets.Card(parent, tr("group_server"), tr("group_server_hint"))
@@ -657,6 +810,92 @@ class SettingsWindow:
         self._load_devices()
 
     # -------------------------------------------------------------- server ops --
+    def _find_servers(self):
+        """Broadcast a probe and offer what answers."""
+        from .. import discovery
+        tr = self.app.tr
+        self.test_label.configure(text=tr("wizard_searching"), text_color=theme.TEXT_MUTED)
+
+        def run():
+            found = discovery.discover()
+
+            def show():
+                for child in self.found_box.winfo_children():
+                    child.destroy()
+                if not found:
+                    self.found_box.pack_forget()
+                    self.test_label.configure(text=tr("wizard_find_none"),
+                                              text_color=theme.WARN)
+                    return
+                self.found_box.pack(fill="x", pady=(theme.PAD_S, 0))
+                self.test_label.configure(text=tr("wizard_find_count", count=len(found)),
+                                          text_color=theme.TEXT_MUTED)
+                for entry in found:
+                    label = entry["url"] + (f"  ·  v{entry['version']}"
+                                            if entry.get("version") else "")
+                    self._button(self.found_box, label,
+                                 lambda u=entry["url"]: self._use_found(u), 340).pack(
+                        anchor="w", pady=2)
+            self.app.post(show)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _use_found(self, url: str) -> None:
+        self.server_field.set(url)
+        self.test_label.configure(text=url, text_color=theme.OK)
+        if url.startswith("https://"):
+            self._repin()
+
+    def _render_pin(self) -> None:
+        tr = self.app.tr
+        pin = self.cfg.get("tls_pin") or ""
+        https = (self.server_field.get() or "").strip().lower().startswith("https://")
+        if not https:
+            self.pin_label.configure(text=tr("settings_pin_not_needed"),
+                                     text_color=theme.TEXT_FAINT)
+        elif pin:
+            from ..api import format_fingerprint
+            self.pin_label.configure(
+                text=tr("settings_pin_set", fingerprint=format_fingerprint(pin)),
+                text_color=theme.OK)
+        else:
+            self.pin_label.configure(text=tr("settings_pin_missing"),
+                                     text_color=theme.WARN)
+        self.pin_card.pack(fill="x", pady=(theme.PAD_S, 0))
+
+    def _repin(self):
+        """Read the certificate the server presents now and remember it."""
+        from .. import api as apimod
+        tr = self.app.tr
+        cfg = dict(self.cfg)
+        cfgmod.parse_server_url(self.server_field.get(), cfg)
+        if not cfgmod.server_url(cfg).startswith("https://"):
+            self.pin_label.configure(text=tr("settings_pin_not_needed"),
+                                     text_color=theme.TEXT_FAINT)
+            return
+        self.pin_label.configure(text=tr("wizard_pin_checking"), text_color=theme.TEXT_MUTED)
+
+        def run():
+            try:
+                fingerprint = apimod.fetch_fingerprint(cfg["server_host"], cfg["server_port"])
+            except (OSError, ValueError) as err:
+                # capture as a default arg: `err` dies with the except block
+                self.app.post(lambda err=err: self.pin_label.configure(
+                    text=tr("wizard_pin_failed", error=err), text_color=theme.ERROR))
+                return
+
+            def show():
+                self.cfg["tls_pin"] = fingerprint
+                self._render_pin()
+            self.app.post(show)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _forget_pin(self):
+        self.cfg["tls_pin"] = ""
+        self._render_pin()
+        self._mark_dirty()
+
     def _test(self):
         self.test_label.configure(text="…", text_color=theme.TEXT_MUTED)
         api = self._new_api()
@@ -995,6 +1234,13 @@ class SettingsWindow:
         cfg["cleanup"] = bool(self.cleanup_switch.get())
         cfg["cleanup_guard"] = bool(self.cleanup_guard_switch.get())
         cfg["language"] = self.language_menu.get()
+        cfg["style"] = self.style_names.get(self.style_menu.get(), "default")
+        cfg["per_app_profiles"] = bool(self.per_app_switch.get())
+        cfg["profiles"] = dict(self._profile_rules)
+        vocab = [t.strip() for t in self.vocab_box.get("1.0", "end")
+                 .replace(";", ",").split(",") if t.strip()]
+        cfg["vocabulary"] = vocab
+        cfg["tls_pin"] = self.cfg.get("tls_pin", "")
         cfg["input_device"] = self._device_map.get(self.device_menu.get())
 
         for entry, key in ((self.silence_ms_entry, "silence_ms"),

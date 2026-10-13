@@ -41,6 +41,79 @@ DEFAULT_CLEANUP_PROMPT = (
     "Output: So I was thinking we should launch on Monday.\n"
 )
 
+# --- writing styles ---------------------------------------------------------
+# Small, predictable instructions appended to the base prompt. A style may never
+# ask the model to add words: `cleanup_ok()` rejects rewrites that do, so a bad
+# style degrades to the raw transcript instead of corrupting the dictation.
+STYLES = {
+    "default": "",
+    "formal": (
+        "Tone: formal and professional. Use complete sentences and avoid "
+        "contractions and slang. Do not add greetings, sign-offs or anything "
+        "the speaker did not say."
+    ),
+    "casual": (
+        "Tone: relaxed and conversational. Contractions are welcome and the "
+        "result should read the way people actually talk."
+    ),
+    "concise": (
+        "Make the text as short as the meaning allows: drop redundant words and "
+        "false starts, but never drop information or change the meaning."
+    ),
+    "bullets": (
+        "If the speaker clearly lists two or more things, put them on separate "
+        "lines starting with \"- \". Otherwise leave the text as prose."
+    ),
+}
+DEFAULT_STYLE = "default"
+MAX_VOCABULARY_TERMS = 200
+
+
+def normalize_style(style: str | None) -> str:
+    """Unknown or missing styles fall back to the default."""
+    return style if style in STYLES else DEFAULT_STYLE
+
+
+def sanitize_vocabulary(terms) -> list[str]:
+    """Keep a tidy list of short terms (used to bias Whisper and prompt the LLM)."""
+    if not terms:
+        return []
+    if isinstance(terms, str):                      # accept "a, b, c"
+        terms = terms.replace(";", ",").split(",")
+    out, seen = [], set()
+    for term in terms:
+        text = " ".join(str(term).split()).strip(" ,.")[:60]
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+        if len(out) >= MAX_VOCABULARY_TERMS:
+            break
+    return out
+
+
+def build_prompt(base_prompt: str = DEFAULT_CLEANUP_PROMPT, style: str | None = None,
+                 vocabulary=None) -> str:
+    """Compose the formatter prompt: base instructions + style + vocabulary."""
+    parts = [(base_prompt or DEFAULT_CLEANUP_PROMPT).rstrip()]
+
+    fragment = STYLES.get(normalize_style(style), "")
+    if fragment:
+        parts.append(fragment)
+
+    terms = sanitize_vocabulary(vocabulary)
+    if terms:
+        spelled = ", ".join(terms)
+        parts.append(
+            "The speaker may say these names or terms; spell them exactly like "
+            f"this when they occur: {spelled}.\n"
+            "Never insert one of them if the speaker did not say it."
+        )
+    return "\n\n".join(parts) + "\n"
+
 # Phrases that reveal the model went off-script and started explaining itself
 _OFF_SCRIPT_MARKERS = (
     "as per the instructions",

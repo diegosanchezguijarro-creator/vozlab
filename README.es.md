@@ -100,6 +100,10 @@ prueba del micrófono. Después: mantén la tecla, habla, suelta.
 - 🛠️ **Ajustes unificados**: elige modelo, idioma y modelo de formato desde la app, sin SSH ni reinicios
 - 🔒 Privado de serie: sin telemetría, sin audio en disco, y tus palabras nunca llegan al registro salvo que actives la depuración
 - 🔑 El token se guarda cifrado con DPAPI (Windows) y cada dispositivo puede tener su propio token revocable
+- 🎭 **Habla como tú**: formal en el correo, informal en Slack, elegido según la app en la que escribes
+- 📚 **Conoce tus nombres**: añade tu nombre, tu empresa y tus productos una vez y Whisper los acierta siempre
+- 🔎 **Se encuentra solo**: *Buscar mi servidor* localiza servidores VozLab en tu red
+- 🔐 HTTPS opcional con certificado **fijado** (autofirmado)
 - 📋 Pegado seguro: usa Ctrl+V y restaura tu portapapeles
 - 🐳 Servidor en Docker: GPU NVIDIA, solo CPU, NAS o Raspberry Pi
 

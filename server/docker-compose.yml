@@ -6,11 +6,18 @@ services:
     restart: unless-stopped
     ports:
       - "8092:8080"
+      - "8093:8093/udp"              # LAN discovery probes (the app finds this server)
     volumes:
       - ./data:/data
     # Reach ollama (the cleanup LLM) on the host at host.docker.internal:11434
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    environment:
+      # the port the app should use (the published one, not the container's 8080)
+      - VOZLAB_PUBLIC_PORT=8092
+      # set by `install.sh --tls` through ./.env; empty means plain HTTP
+      - VOZLAB_TLS_CERT=${VOZLAB_TLS_CERT:-}
+      - VOZLAB_TLS_KEY=${VOZLAB_TLS_KEY:-}
     # --- hardening ---------------------------------------------------------
     user: "1000:1000"                 # match install.sh's chown of ./data
     read_only: true                   # the container filesystem is immutable
