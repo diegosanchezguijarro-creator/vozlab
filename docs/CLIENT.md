@@ -51,7 +51,7 @@ the server works, then a short preview of your text.
 | Format text with the local AI | off = raw Whisper output (fastest) |
 | Dictation language | auto-detect, or force `en`, `es`, … |
 | Interface language | auto (follows Windows), English, Spanish |
-| Sound feedback | short beeps when recording starts/stops |
+| Sound feedback | off by default; short beeps when recording starts/stops |
 | Restore clipboard after pasting | your previous clipboard comes back |
 | Show floating status pill | hide it if you prefer silence |
 | Start with Windows | autostart at login |

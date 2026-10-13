@@ -3,6 +3,15 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-10-13
+
+### Changed
+- **Sound feedback is now off by default.** No more beeps out of the box; turn it
+  on any time in *Settings → System → Sound feedback*. Existing configs are
+  migrated once (a `config_version` field) so installed copies go quiet too,
+  unless you had explicitly enabled it.
+- Settings: the switch now has a short description.
+
 ## [1.1.0] — 2026-10-13
 
 ### Added

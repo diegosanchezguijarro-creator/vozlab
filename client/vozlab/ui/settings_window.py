@@ -240,7 +240,8 @@ class SettingsWindow:
         self.startup_switch = self._switch(card.body, tr("settings_startup"),
                                            self.cfg.get("launch_at_login", False))
         self.beeps_switch = self._switch(card.body, tr("settings_beeps"),
-                                         self.cfg.get("beeps", True))
+                                         self.cfg.get("beeps", False),
+                                         tr("settings_beeps_hint"))
         self.clipboard_switch = self._switch(card.body, tr("settings_clipboard"),
                                              self.cfg.get("restore_clipboard", True))
         self.debug_switch = self._switch(card.body, tr("settings_debug"),

@@ -284,7 +284,7 @@ class VozLabApp:
             threading.Thread(target=restore, daemon=True).start()
 
     def _beep(self, freq: int, ms: int) -> None:
-        if self.cfg.get("beeps", True):
+        if self.cfg.get("beeps", False):
             _beep(freq, ms)
 
     def _notify_error(self, msg: str) -> None:

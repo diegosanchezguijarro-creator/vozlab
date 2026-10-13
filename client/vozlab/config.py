@@ -7,6 +7,8 @@ import sys
 from . import APP_NAME
 
 DEFAULTS = {
+    # bumped when a default changes and existing configs must be migrated
+    "config_version": 2,
     # server
     "server_host": "",
     "server_port": 8092,
@@ -24,7 +26,7 @@ DEFAULTS = {
     # behaviour
     "cleanup": True,            # run the LLM formatting pass
     "language": "auto",         # language hint sent to the server ("auto", "en", "es", ...)
-    "beeps": True,
+    "beeps": False,             # sound feedback — off by default, toggle in Settings
     "restore_clipboard": True,
     "debug": False,
     # ui
@@ -49,11 +51,20 @@ def config_path() -> str:
 
 def load() -> dict:
     cfg = dict(DEFAULTS)
+    stored = {}
     try:
         with open(config_path()) as f:
-            cfg.update(json.load(f))
+            stored = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         pass
+    cfg.update(stored)
+
+    # --- migrations ---------------------------------------------------------
+    # v2: sound feedback used to be on by default; newer versions are silent
+    # unless the user turns it on in Settings.
+    if stored.get("config_version", 1) < 2:
+        cfg["beeps"] = False
+        cfg["config_version"] = 2
     return cfg
 
 

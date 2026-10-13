@@ -29,6 +29,7 @@ def test_config_defaults_and_roundtrip(tmp_config):
     cfg = cfgmod.load()
     assert cfg["hotkey_mode"] == "hold"
     assert cfg["cleanup"] is True
+    assert cfg["beeps"] is False, "sound feedback must be off by default"
 
     cfg["server_host"] = "10.0.0.5"
     cfg["token"] = "abc"
@@ -40,6 +41,24 @@ def test_config_defaults_and_roundtrip(tmp_config):
     # unknown/partial files must not explode
     (tmp_config / "config.json").write_text("{ not json")
     assert cfgmod.load()["hotkey_mode"] == "hold"
+
+
+def test_migration_silences_existing_configs(tmp_config):
+    """v1 configs had beeps=True stored; the v2 migration turns sound off once."""
+    (tmp_config / "config.json").write_text(json.dumps({
+        "server_host": "10.0.0.5", "beeps": True, "cleanup": False,
+    }))
+    cfg = cfgmod.load()
+    assert cfg["beeps"] is False
+    assert cfg["cleanup"] is False, "other user settings must survive migration"
+    assert cfg["config_version"] == 2
+
+
+def test_migration_keeps_sound_when_user_explicitly_enabled_it(tmp_config):
+    (tmp_config / "config.json").write_text(json.dumps({
+        "config_version": 2, "beeps": True,
+    }))
+    assert cfgmod.load()["beeps"] is True
 
 
 def test_server_url_and_parsing():
