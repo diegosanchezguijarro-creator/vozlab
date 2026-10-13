@@ -51,6 +51,36 @@ python -m pytest tests -q
 pyinstaller vozlab.spec --noconfirm        # produces a Linux binary
 ```
 
+## Code signing
+
+Unsigned builds trigger **SmartScreen** ("More info → Run anyway" — harmless) and
+are **blocked outright by Smart App Control** (no bypass, by design). Signing is
+therefore required to distribute to other people; self-signed certificates do
+*not* satisfy Smart App Control (it only trusts CA-issued chains).
+
+| Option | Cost | Notes |
+|---|---|---|
+| [Azure Trusted Signing](https://learn.microsoft.com/azure/trusted-signing/) | ~$10/month | Microsoft-trusted, no hardware token, made for CI. Best fit for this repo: add `azure/trusted-signing-action` to `release.yml`. Identity validation required (individual validation needs verifiable history). |
+| OV certificate (DigiCert/Sectigo…) | ~$200–400/year | Needs a cloud HSM (Azure Key Vault) or hardware token for CI. SmartScreen reputation builds up over downloads. |
+| EV certificate | ~$300–500/year | Immediate SmartScreen trust; hardware token or cloud HSM. |
+
+CI sketch (Trusted Signing) — sign both the app and the installer, in order:
+
+```yaml
+      - uses: azure/trusted-signing-action@v0
+        with:
+          endpoint: ${{ secrets.AZURE_TS_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_TS_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_TS_PROFILE }}
+          files-folder: client/dist/VozLab
+          files-folder-filter: exe,dll
+      # then build the installer so it wraps the signed binaries,
+      # and sign installer/output/VozLab-Setup-*.exe the same way
+```
+
+Until then: Windows users with Smart App Control enabled should
+[run from source](../docs/TROUBLESHOOTING.md#windows-blocks-the-installer).
+
 ## Icon
 
 `client/assets/icon.ico` is generated programmatically:

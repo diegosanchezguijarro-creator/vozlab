@@ -65,10 +65,35 @@ Settings → *Show floating status pill*. Position is controlled by
 `pill_position` in `%APPDATA%\VozLab\config.json`
 (`bottom-center`, `bottom-right`, `top-right`).
 
-## Windows SmartScreen blocks the installer
+## Windows blocks the installer
 
-Expected for unsigned software: **More info → Run anyway**. Code signing is on
-the roadmap (`docs/BUILD.md`).
+Two different Windows features can do this:
+
+**SmartScreen** — *"Windows protected your PC"*. Click **More info → Run anyway**.
+Expected for unsigned software; harmless.
+
+**Smart App Control** — *"This app can't run because it's not signed"* (Settings →
+Privacy & security → Windows Security → App & browser control → Smart App Control).
+There is **no bypass** — SAC only allows apps with a valid signature. Pick one:
+
+1. **Run from source (recommended, keeps SAC enabled).** Windows allows the app
+   because it is launched by your signed `pythonw.exe`:
+
+   ```powershell
+   # in the repo's client folder (requires Python 3.11+)
+   powershell -ExecutionPolicy Bypass -File tools\install_from_source.ps1
+   ```
+
+   This creates a `.venv`, installs the dependencies, adds a **VozLab** Start-menu
+   shortcut and launches the app. It behaves exactly like the installed build.
+
+2. **Turn Smart App Control off** — Settings → Privacy & security → Windows
+   Security → App & browser control → Smart App Control → **Off**.
+   ⚠️ Microsoft warns it can only be re-enabled by resetting Windows. Only do this
+   if you are comfortable with that.
+
+3. **Sign the build** — required if you want to *share* the installer: every friend
+   with SAC enabled would hit the same wall. See [BUILD.md](BUILD.md#code-signing).
 
 ## `vozlab` container restarts in a loop (server)
 
