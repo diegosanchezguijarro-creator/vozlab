@@ -132,14 +132,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Supply-chain paperwork: a signed-in-image SBOM of everything we ship.
+      # Supply-chain paperwork: an SBOM of everything we ship.
       - name: Generate SBOM (SPDX)
         uses: anchore/sbom-action@v0
         with:
           image: ghcr.io/${{ github.repository_owner }}/vozlab-server:${{ github.ref_name }}
-          artifact-name: vozlab-server-${{ github.ref_name }}.spdx.json
+          artifact-name: vozlab-server.spdx.json      # one copy: the release asset below
           output-file: vozlab-server.spdx.json
           format: spdx-json
+          upload-artifact: false                      # no duplicate in the run artifacts
 
       - name: Attach the SBOM to the release
         uses: softprops/action-gh-release@v2
