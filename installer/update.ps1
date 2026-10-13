@@ -8,7 +8,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Repo = "diegosanchezguijarro-creator/vozlab",
+    [string]$Repo = "diegosg-dev/vozlab",
     [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\VozLab'),
     [switch]$CheckOnly,
     [switch]$Force,

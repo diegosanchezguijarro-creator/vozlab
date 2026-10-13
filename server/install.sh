@@ -149,6 +149,6 @@ $([ -n "${TLS_FINGERPRINT:-}" ] && printf '  Certificate : %s\n  (the app shows 
       docker compose $( $WITH_AI && echo '-f docker-compose.full.yml ' )restart
       docker compose $( $WITH_AI && echo '-f docker-compose.full.yml ' )down
 
-  Client (Windows): https://github.com/diegosanchezguijarro-creator/vozlab#install
-  Docs            : https://github.com/diegosanchezguijarro-creator/vozlab/tree/main/docs
+  Client (Windows): https://github.com/diegosg-dev/vozlab#install
+  Docs            : https://github.com/diegosg-dev/vozlab/tree/main/docs
 EOF

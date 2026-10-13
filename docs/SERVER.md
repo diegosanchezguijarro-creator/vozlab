@@ -32,7 +32,7 @@ the sensible models there.
 ### Easiest: published image + bundled AI
 
 ```bash
-git clone https://github.com/diegosanchezguijarro-creator/vozlab.git
+git clone https://github.com/diegosg-dev/vozlab.git
 cd vozlab/server
 bash install.sh --with-ai
 ```
@@ -43,7 +43,7 @@ model automatically (~4 GB, once). Nothing else to install.
 ### From this checkout (builds locally, uses an Ollama you already have)
 
 ```bash
-git clone https://github.com/diegosanchezguijarro-creator/vozlab.git
+git clone https://github.com/diegosg-dev/vozlab.git
 cd vozlab/server
 bash install.sh
 ```

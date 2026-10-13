@@ -11,8 +11,8 @@ audio leaving your network.
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
-  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosanchezguijarro-creator/vozlab?include_prereleases&sort=semver" alt="Latest release"></a>
-  <a href="../../actions/workflows/ci.yml"><img src="https://github.com/diegosanchezguijarro-creator/vozlab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosg-dev/vozlab?include_prereleases&sort=semver" alt="Latest release"></a>
+  <a href="../../actions/workflows/ci.yml"><img src="https://github.com/diegosg-dev/vozlab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-informational.svg" alt="Windows 10/11">
   <img src="https://img.shields.io/badge/telemetry-none-success.svg" alt="No telemetry">
@@ -52,7 +52,7 @@ that stays at home. You need both once.
 Open **PowerShell** and paste:
 
 ```powershell
-irm https://raw.githubusercontent.com/diegosanchezguijarro-creator/vozlab/main/installer/deploy.ps1 | iex
+irm https://raw.githubusercontent.com/diegosg-dev/vozlab/main/installer/deploy.ps1 | iex
 ```
 
 This works **even with Smart App Control enabled** (it runs the app with your
@@ -89,7 +89,7 @@ On the machine that will do the heavy lifting (Ubuntu/Debian, or anything runnin
 Docker — NAS, Windows with Docker Desktop, macOS):
 
 ```bash
-git clone https://github.com/diegosanchezguijarro-creator/vozlab.git
+git clone https://github.com/diegosg-dev/vozlab.git
 cd vozlab/server
 bash install.sh --with-ai
 ```

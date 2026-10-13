@@ -3,7 +3,7 @@ rem VozLab installer — double-click friendly wrapper around deploy.ps1
 rem Works with Smart App Control enabled (no unsigned .exe is executed).
 setlocal
 
-set "REPO=diegosanchezguijarro-creator/vozlab"
+set "REPO=diegosg-dev/vozlab"
 set "SCRIPT=%~dp0deploy.ps1"
 
 if not exist "%SCRIPT%" (

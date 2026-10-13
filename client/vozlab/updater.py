@@ -11,7 +11,7 @@ import requests
 
 from . import VERSION
 
-DEFAULT_REPO = "diegosanchezguijarro-creator/vozlab"
+DEFAULT_REPO = "diegosg-dev/vozlab"
 API_LATEST = "https://api.github.com/repos/{repo}/releases/latest"
 INSTALLER_ASSET = "VozLab-{version}-src.zip"
 USER_AGENT = f"VozLab/{VERSION}"

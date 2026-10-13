@@ -108,7 +108,7 @@ Example — pin tokens and models in Compose:
 ```yaml
 services:
   vozlab:
-    image: ghcr.io/diegosanchezguijarro-creator/vozlab-server:latest
+    image: ghcr.io/diegosg-dev/vozlab-server:latest
     environment:
       - VOZLAB_TOKEN=choose-something-long
       - VOZLAB_WHISPER_MODEL=small.en

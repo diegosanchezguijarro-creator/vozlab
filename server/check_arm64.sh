@@ -14,7 +14,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-IMAGE="ghcr.io/diegosanchezguijarro-creator/vozlab-server:${VOZLAB_VERSION:-latest}"
+IMAGE="ghcr.io/diegosg-dev/vozlab-server:${VOZLAB_VERSION:-latest}"
 PORT="${VOZLAB_PORT:-8092}"
 
 say()  { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }

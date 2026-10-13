@@ -12,7 +12,7 @@
 
 services:
   vozlab:
-    image: ghcr.io/diegosanchezguijarro-creator/vozlab-server:${VOZLAB_VERSION:-latest}
+    image: ghcr.io/diegosg-dev/vozlab-server:${VOZLAB_VERSION:-latest}
     container_name: vozlab
     restart: unless-stopped
     ports:

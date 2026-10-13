@@ -113,8 +113,8 @@ def write_report(directory: str, cfg: dict, log_path: str = "",
     return path
 
 
-ISSUE_URL = ("https://github.com/diegosanchezguijarro-creator/vozlab/issues/new"
+ISSUE_URL = ("https://github.com/diegosg-dev/vozlab/issues/new"
              "?template=bug_report.yml")
-DOCS_URL = "https://github.com/diegosanchezguijarro-creator/vozlab/tree/main/docs"
-TROUBLESHOOTING_URL = ("https://github.com/diegosanchezguijarro-creator/vozlab/"
+DOCS_URL = "https://github.com/diegosg-dev/vozlab/tree/main/docs"
+TROUBLESHOOTING_URL = ("https://github.com/diegosg-dev/vozlab/"
                        "blob/main/docs/TROUBLESHOOTING.md")

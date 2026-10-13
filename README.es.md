@@ -11,7 +11,7 @@ Sin nube, sin suscripción, sin cuenta, y sin que tu voz salga de tu red.
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-MIT-blue.svg" alt="Licencia MIT"></a>
-  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosanchezguijarro-creator/vozlab?include_prereleases&sort=semver" alt="Última versión"></a>
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosg-dev/vozlab?include_prereleases&sort=semver" alt="Última versión"></a>
   <img src="https://img.shields.io/badge/telemetr%C3%ADa-ninguna-success.svg" alt="Sin telemetría">
 </p>
 
@@ -43,7 +43,7 @@ equipo que se quede en casa. Solo se configura una vez.
 Abre **PowerShell** y pega:
 
 ```powershell
-irm https://raw.githubusercontent.com/diegosanchezguijarro-creator/vozlab/main/installer/deploy.ps1 | iex
+irm https://raw.githubusercontent.com/diegosg-dev/vozlab/main/installer/deploy.ps1 | iex
 ```
 
 Funciona **incluso con Smart App Control activado** (la app se ejecuta con tu
@@ -57,7 +57,7 @@ En el equipo que hará el trabajo pesado (Ubuntu/Debian, o cualquier cosa con
 Docker — NAS, Windows con Docker Desktop, macOS):
 
 ```bash
-git clone https://github.com/diegosanchezguijarro-creator/vozlab.git
+git clone https://github.com/diegosg-dev/vozlab.git
 cd vozlab/server
 bash install.sh --with-ai
 ```

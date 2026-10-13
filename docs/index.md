@@ -75,4 +75,4 @@ a few seconds on CPU only.
 - 📋 Clipboard-safe pasting, dark **and light** themes, first-run wizard
 
 Full feature list and screenshots: the
-[repository README](https://github.com/diegosanchezguijarro-creator/vozlab#readme).
+[repository README](https://github.com/diegosg-dev/vozlab#readme).

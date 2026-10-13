@@ -1,8 +1,8 @@
 site_name: VozLab
 site_description: Local, private voice dictation for Windows — your own Whisper + LLM server.
-site_url: https://diegosanchezguijarro-creator.github.io/vozlab/
-repo_url: https://github.com/diegosanchezguijarro-creator/vozlab
-repo_name: diegosanchezguijarro-creator/vozlab
+site_url: https://diegosg-dev.github.io/vozlab/
+repo_url: https://github.com/diegosg-dev/vozlab
+repo_name: diegosg-dev/vozlab
 edit_uri: edit/main/docs/
 copyright: MIT licensed · built by the VozLab contributors
 
@@ -34,7 +34,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/diegosanchezguijarro-creator/vozlab
+      link: https://github.com/diegosg-dev/vozlab
 
 markdown_extensions:
   - admonition

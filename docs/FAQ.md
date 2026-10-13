@@ -84,6 +84,6 @@ README; it works even with SAC enabled.
 
 ### Something else?
 
-[Open an issue](https://github.com/diegosanchezguijarro-creator/vozlab/issues) or
+[Open an issue](https://github.com/diegosg-dev/vozlab/issues) or
 check [Troubleshooting](TROUBLESHOOTING.md) first — most questions are answered
 there.
