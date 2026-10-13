@@ -46,8 +46,10 @@ if [[ "$current_name" == "VozLab" || -z "$current_name" ]]; then
   git config user.name "$GH_USER"
   git config user.email "${GH_ID}+${GH_USER}@users.noreply.github.com"
   if ! git remote get-url origin >/dev/null 2>&1; then
-    git commit --amend --reset-author --no-edit
-    echo "  re-authored the initial commit as $GH_USER"
+    # nothing pushed yet: re-author every commit as the real user
+    GIT_SEQUENCE_EDITOR=true git rebase --root --exec \
+      "git commit --amend --reset-author --no-edit" >/dev/null
+    echo "  re-authored all commits as $GH_USER"
   fi
 else
   echo "  (keeping existing identity: $current_name <$current_email>)"
