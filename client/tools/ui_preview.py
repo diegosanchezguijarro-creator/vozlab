@@ -13,6 +13,7 @@ On a headless box run it under a virtual display:
 """
 
 import os
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -75,7 +76,12 @@ class FakeApp:
 def screenshot(name: str, prefix: str = "") -> None:
     path = os.path.join(SHOT_DIR, f"{prefix}{name}.png")
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    rc = os.system(f"import -window root '{path}' 2>/dev/null")
+    # no shell: the path is passed as an argument, not interpolated into a command
+    try:
+        rc = subprocess.run(["import", "-window", "root", path],
+                            capture_output=True, timeout=30).returncode
+    except (OSError, subprocess.SubprocessError):
+        rc = 1
     print(f"  {'saved' if rc == 0 else 'FAILED'} {path}")
     return rc
 

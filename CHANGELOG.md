@@ -3,6 +3,91 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-10-13
+
+**Security, unified settings and a real settings overhaul.** Everything from C, D
+and E of the roadmap that a self-hoster actually feels: the app configures the
+server, secrets stop living in plain text, and the whole UI gets themes, tabs and
+translations in JSON.
+
+### Security
+- **The token is encrypted at rest on Windows** (`secretstore.py`, DPAPI via
+  ctypes — no extra dependency). `config.json` now stores `token_enc`; older
+  plain-text configs are migrated on the next save. A copied config file is
+  useless on another account.
+- **Per-device tokens**: *Settings → Server → Connected devices* issues a token
+  for one machine; only a salted SHA-256 hash is kept on the server and the value
+  is shown once. Revoke a stolen laptop without touching the others.
+- **Dictated text no longer reaches `vozlab.log`.** The log records timings,
+  language and length; only *Debug logging* (off) records the words. Every line
+  is additionally scrubbed of the token, `Bearer …` headers and `"token": "…"`.
+- **No audio on disk, anywhere.** The server decodes the uploaded bytes in memory
+  (`io.BytesIO` → faster-whisper), so there is no temporary file to leak.
+- **Minimal unauthenticated surface**: `/health` returns only
+  `{"ok", "version", "api"}`; models, device, GPU and counters moved behind the
+  token at `/status`. OpenAPI docs are disabled. Requests are rate limited
+  (`VOZLAB_RATE_LIMIT`, default 120/min) and token checks are constant-time.
+- **The token is printed once**, when it is created — not on every restart, so it
+  stops piling up in `docker logs`/journald.
+- **Container hardening**: non-root (uid 1000), read-only root filesystem,
+  `no-new-privileges`, all capabilities dropped, base image pinned by digest.
+- **Fixed dependency CVEs** found by the new `pip-audit` job (`requests`,
+  `starlette`/`fastapi`); removed an unused dependency.
+
+### Added — unified settings (the app configures your server)
+- `GET/PATCH /settings`, `GET /models`, `POST /models/preload`, `POST /self-test`,
+  `GET /logs`, `GET/POST /tokens`, `DELETE /tokens/<id>`.
+- The app's **Server tab** changes the speech model, language, formatting model
+  and cleanup on the server live — no SSH, no restart. Whisper reloads in the
+  background and `/status` reports progress.
+- **Run full test** transcribes a sample bundled in the image end to end and
+  reports the timings; **Load into memory** warms a formatting model.
+- Server activity and device list, right in the app.
+
+### Added — settings overhaul
+- Six tabs: **Dictation · Audio · Formatting · Server · Appearance · System**.
+- Audio: input-device picker (devices that vanished fall back to the default),
+  live input meter, *Test microphone* that records 3 s and shows what the server
+  heard, and sliders-in-numbers for silence and length limits.
+- System: app-log viewer, **Clear log**, export/import settings (never the token),
+  reset to defaults, diagnostics, updates.
+- Import is defensive: unknown keys are dropped and the token always stays local.
+
+### Added — look, feel and languages
+- **Dark / light / follow-Windows themes** (two full palettes with a contrast
+  test in the suite).
+- Pill styles (**full** with the live meter, or **minimal**), an elapsed-seconds
+  counter while you talk, and **click the pill to copy** the last dictation.
+- Tray: **Copy last dictation**, **Pause for 30 min** (with a pause icon), and
+  Esc now **cancels** a recording instead of sending it.
+- i18n moved to `client/vozlab/locales/{en,es}.json`; a test enforces that every
+  language has the same keys and the same `{placeholders}`. Adding a language is
+  now a single JSON file.
+
+### Added — enforcement in CI
+- `Security` workflow: **ruff** (it caught real `except … as e` scope bugs),
+  **bandit**, **gitleaks**, **pip-audit**, and a job that fails if the Dockerfile
+  and `requirements.txt` drift apart.
+- **Dependabot** for pip, Docker and GitHub Actions.
+- Every release publishes an **SBOM** (`vozlab-server-<version>.spdx.json`).
+- **Soak tests** (`client/tests/test_soak.py`) drive 200 recording cycles and 50
+  hotkey restarts to catch thread/memory leaks. They found two real ones: a
+  worker thread leaked per hotkey restart, and shared mutable state between
+  configs.
+
+### Fixed
+- `except ... as e` lambdas in the error paths raised `NameError` instead of
+  showing the message (Python deletes the name at the end of the block).
+- `HotkeyManager.stop()` never joined its worker, so a restart left two workers.
+- `dict(DEFAULT_CONFIG)` shared the `device_tokens` list between configs.
+- A wrong token used to report "Connected" in the settings status line, because
+  the fallback to the then-verbose `/health` succeeded.
+
+### Docs
+- `docs/API.md` documents the whole surface (with real payloads), `docs/PRIVACY.md`
+  states exactly what is stored and how to verify it, `docs/REMOTE.md` covers VPN
+  access. The committed MkDocs build output was removed from git.
+
 ## [1.2.0] — 2026-10-13
 
 **A release aimed at strangers on the internet: installable without code signing,

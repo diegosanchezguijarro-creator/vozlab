@@ -124,9 +124,13 @@ Then hold your key, speak, release — the words appear where your cursor is.
 
 ## Screenshots
 
-| Settings | First-run wizard |
-|---|---|
-| <img src="docs/images/settings.png" alt="Settings window"> | <img src="docs/images/wizard-server.png" alt="Setup wizard"> |
+| Dictation | Audio | Server |
+|---|---|---|
+| <img src="docs/images/settings-dictation.png" alt="Dictation settings"> | <img src="docs/images/settings-audio.png" alt="Audio settings"> | <img src="docs/images/settings-server.png" alt="Server settings"> |
+
+| Appearance | System | First-run wizard |
+|---|---|---|
+| <img src="docs/images/settings-appearance.png" alt="Appearance settings"> | <img src="docs/images/settings-system.png" alt="System settings"> | <img src="docs/images/wizard-server.png" alt="Setup wizard"> |
 
 | Listening | Transcribing | Result |
 |---|---|---|
@@ -145,11 +149,14 @@ Then hold your key, speak, release — the words appear where your cursor is.
 | 🤖 **Optional auto-stop** | Press once, speak, and the recording ends when you stop talking. |
 | ✨ **AI cleanup** | Removes filler words, fixes punctuation and capitalisation, keeps your language (tested in English and Spanish). |
 | 🌍 **Multilingual** | Auto-detects the language; 90+ supported. |
-| 🖥️ **Beautiful tray app** | Animated status pill with a live mic level, dark UI, first-run wizard, settings in plain language. |
-| 🔒 **Private by design** | Audio goes only to your server. No telemetry. No audio written to disk. Nothing logged unless you ask. |
+| 🖥️ **Tray app with themes** | Animated status pill with a live mic level, dark **and light** themes, first-run wizard, six-tab settings in plain language. |
+| 🔒 **Private by design** | Audio goes only to your server. No telemetry. No audio written to disk. Your words never reach the log unless you enable debugging. |
+| 🔑 **Secrets stay secret** | The token is encrypted with Windows DPAPI, and each device can be given its own revocable token. |
 | 📋 **Clipboard-safe** | Pastes with Ctrl+V and restores whatever you had copied. |
 | 🔁 **Easy updates** | `update.ps1` on the client, `docker compose pull` on the server, or the in-app update check. |
 | 🐳 **Runs anywhere** | Server is a Docker image: NVIDIA GPU, CPU-only, NAS, or Raspberry Pi (arm64 image coming). |
+| 🛠️ **Configured from the app** | Pick the speech model, language and formatting model from the Server tab — no SSH, no restart. Run a full end-to-end test with one click. |
+| 🧹 **Hardened by default** | The server container is non-root, read-only and capability-free; dependencies are pinned, audited and shipped with an SBOM. |
 
 ---
 
@@ -213,18 +220,22 @@ VozLab was built privacy-first, and this is the complete list of what happens to
 your data:
 
 - **Audio** is recorded in memory, sent over your LAN to your server, transcribed
-  in memory and discarded. Nothing is written to disk — not on the client, not in
-  the server container.
-- **Transcripts** are pasted into your app. The client only writes them to
-  `vozlab.log` if you switch on *Debug logging*.
+  in memory and discarded. The server decodes the upload in memory too, so not
+  even a temporary file is created.
+- **Transcripts** are pasted into your app and are never written to disk. The log
+  records timings and lengths; only *Debug logging* (off by default) records the
+  words, and *Settings → System → Clear log* empties the file.
 - **No telemetry.** The app talks to exactly two things: your server, and — only
   if you enable *Check for updates* in Settings — GitHub's public releases API to
   compare version numbers. Leave it off and the app never touches the internet.
 - **Authentication** is a bearer token over your LAN; every request must present
-  it. Keep the server on your home network (or reach it through a VPN like
-  WireGuard/Tailscale) rather than exposing port 8092 to the internet.
-- **Secrets in the repo:** none. The server generates its own token on first boot
-  and stores it in `server/data/config.json` (git-ignored, mode 600).
+  it. On Windows the token is stored encrypted (DPAPI), and *Settings → Server*
+  can issue a separate token per device so a lost laptop can be revoked without
+  changing the others. Keep the server on your home network (or reach it through
+  a VPN like WireGuard/Tailscale) rather than exposing port 8092 to the internet.
+- **Secrets in the repo:** none. The server generates its own token on first boot,
+  prints it once and stores it in `server/data/config.json` (git-ignored, mode
+  600). CI runs `gitleaks`, `bandit`, `pip-audit` and `ruff` on every push.
 
 Full detail, including the threat model: **[docs/PRIVACY.md](docs/PRIVACY.md)**.
 
@@ -232,13 +243,21 @@ Full detail, including the threat model: **[docs/PRIVACY.md](docs/PRIVACY.md)**.
 
 ## Configuration
 
-**Client** — tray icon → **Settings**: connection, dictation key and mode, audio
-device thresholds, AI formatting (on/off), language, appearance (pill, sounds,
-theme), system (start with Windows, updates, logs, diagnostics).
-Stored in `%APPDATA%\VozLab\config.json`.
+**Client** — tray icon → **Settings**, six tabs: **Dictation** (key, mode,
+auto-stop, language), **Audio** (device picker, mic test, silence thresholds),
+**Formatting**, **Server** (connection, models, devices, logs, self-test),
+**Appearance** (theme, pill), **System** (logging, updates, import/export).
+Full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
-**Server** — `server/data/config.json`, or `VOZLAB_*` environment variables
-(handy with Docker):
+**Server** — the same window's Server tab drives the server over its API. Or edit
+`server/data/config.json` / use `VOZLAB_*` variables:
+Full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md). Stored in
+`%APPDATA%\VozLab\config.json` (the token encrypted with DPAPI).
+
+**Server** — the same window's Server tab drives the server over its API, so
+model and language changes apply immediately. Alternatively edit
+`server/data/config.json`, or use `VOZLAB_*` environment variables (handy with
+Docker):
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -311,11 +330,14 @@ so `python run_vozlab.py` works on Linux/macOS for development
 
 ## Roadmap
 
-- Unified settings: configure the server (models, language, logs) from the app
+Done in 1.3.0: unified settings (the app configures the server), per-device
+revocable tokens, DPAPI-encrypted local secrets, container hardening and CI
+security scanning. Still ahead:
+
 - Per-app formatting profiles (formal in email, casual in chat)
 - Custom vocabulary ("VozLab", your colleagues' names)
 - arm64 server image (Raspberry Pi 5, NAS) and a macOS Apple Silicon path
-- TLS with certificate pinning + per-device tokens
+- TLS with certificate pinning (VPN is the recommended remote path today)
 - Automatic LAN server discovery in the wizard
 
 ---

@@ -56,26 +56,35 @@ DISPLAY=:99 python tools/make_demo_gif.py                # regenerate demo.gif
 Every pull request runs on Linux **and** Windows:
 
 - byte-compilation of all modules,
-- `pytest` for the client (30 tests) and the server (17 tests),
+- `pytest` for the client (76 tests, including soak/leak checks) and the server
+  (54 tests: the HTTP surface, the cleanup guard and the formatters),
+- `ruff` (lint + real-bug rules) and `bandit` (medium severity and up),
+- `gitleaks` over the full history, `pip-audit` on both dependency sets,
+- a job that fails when `server/Dockerfile` and `server/requirements.txt` drift,
 - compose-file validation (including "the base stacks never request a GPU"),
-- on tags: PyInstaller build, Inno Setup installer, source zip, checksums, and the
-  GHCR server image.
+- on tags: PyInstaller build, Inno Setup installer, source zip, checksums, the
+  GHCR server image and an SPDX SBOM.
 
 Run the same things locally before pushing: `python -m pytest tests -q` in both
-`client/` and `server/`.
+`client/` and `server/`, plus `ruff check client server`.
 
 ## Translations
 
-The UI is English/Spanish today and the strings live in one file:
-[`client/vozlab/i18n.py`](client/vozlab/i18n.py). To add a language:
+The UI ships English and Spanish, and the strings live in plain JSON:
+[`client/vozlab/locales/en.json`](client/vozlab/locales/en.json). To add a
+language:
 
-1. copy the `"en"` dictionary to a new key (e.g. `"fr"`),
-2. translate the values (keep `{placeholders}` intact),
-3. add the code to the language pickers in `ui/settings_window.py`
-   (`LANGUAGES` and the UI-language `CTkOptionMenu` values),
-4. check parity: `python -c "from vozlab import i18n; print(set(i18n.STRINGS['en']) ^ set(i18n.STRINGS['fr']))"` should print an empty set.
+1. copy `en.json` to `<code>.json` (e.g. `fr.json`),
+2. translate the **values**, leaving the keys and any `{placeholders}` untouched
+   (`{model}`, `{error}`…),
+3. add the code to the pickers in `ui/settings_window.py` (`LANGUAGES` for what
+   you dictate, and the UI-language values) and to `i18n.available()`'s list if
+   you want it advertised,
+4. run the tests — `test_i18n.py` fails if a key is missing, extra, empty, or
+   drops a placeholder, and it checks both languages have identical key sets.
 
-`client/tools/ui_preview.py --lang fr` renders it for a screenshot.
+You do not need to touch any Python to translate. `client/tools/ui_preview.py
+--lang fr` renders every window in your language for a screenshot.
 
 ## Style
 

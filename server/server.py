@@ -58,6 +58,7 @@ ENV_OVERRIDES = {
     "VOZLAB_CLEANUP_GUARD": "cleanup_guard",
     "VOZLAB_CLEANUP_MODEL": "cleanup_model",
     "VOZLAB_CLEANUP_BASE_URL": "cleanup_base_url",
+    "VOZLAB_EXPOSE_DETAILS": "expose_details",
 }
 MAX_AUDIO_BYTES = 25 * 1024 * 1024  # 25 MB (~2h of 16kHz mono WAV)
 

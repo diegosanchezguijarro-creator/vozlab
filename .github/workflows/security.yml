@@ -33,8 +33,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install bandit[toml]
-      # -ll = medium and above fail the build (uses [tool.bandit] in pyproject.toml)
-      - run: bandit -q -r client server -ll
+      # -ll = medium and above fail the build; -c is required for the [tool.bandit]
+      # section to be read (skips B310 in the dev-only benchmark tool).
+      - run: bandit -q -c pyproject.toml -r client server -ll
 
   secrets:
     name: Secret scan (gitleaks)

@@ -13,7 +13,7 @@ for completeness and for advanced tweaks; the app rewrites it on save.
 |---|---|---|
 | `server_host` | — | server IP or hostname (`192.168.0.23`) |
 | `server_port` | `8092` | server port |
-| `token` | — | the token printed by the server |
+| `token` | — | the token. **Encrypted on disk** as `token_enc` (Windows DPAPI); plain text only on Linux/macOS dev machines |
 | `hotkey` | — | hardware scan code (e.g. `285` = right Ctrl) or key name |
 | `hotkey_mode` | `"hold"` | `hold` (push-to-talk) or `toggle` |
 | `auto_stop` | `false` | end the recording automatically after you stop speaking |
@@ -22,12 +22,17 @@ for completeness and for advanced tweaks; the app rewrites it on save.
 | `min_seconds` | `0.4` | recordings shorter than this are ignored |
 | `max_seconds` | `60` | hard limit per recording |
 | `cleanup` | `true` | ask the server to run the AI formatting pass |
+| `cleanup_guard` | `true` | never let the formatter rewrite what you said |
 | `language` | `"auto"` | language hint (`auto`, `en`, `es`, …) |
+| `input_device` | `null` | microphone name; `null` follows the system default |
 | `beeps` | `false` | short beeps when recording starts/stops |
 | `restore_clipboard` | `true` | put your previous clipboard back after pasting |
-| `ui_language` | `"auto"` | interface language (`auto` follows Windows) |
+| `ui_language` | `"auto"` | interface language: `auto`, `en`, `es` |
+| `theme` | `"dark"` | `dark`, `light` or `system` |
 | `show_pill` | `true` | show the floating status pill |
 | `pill_position` | `"bottom-center"` | `bottom-center`, `bottom-right`, `top-right` |
+| `pill_style` | `"full"` | `full` (live meter) or `minimal` (just the words) |
+| `device_name` | hostname | label this device shows up as in the server's device list |
 | `launch_at_login` | `false` | start with Windows |
 | `check_updates` | `false` | opt-in GitHub release check |
 | `debug` | `false` | verbose log, including the text you dictate |
@@ -51,7 +56,8 @@ Created on first boot with a generated token. Edit it and restart
 
 | Key | Default | Meaning |
 |---|---|---|
-| `token` | generated | shared secret; every request must present it |
+| `token` | generated | admin secret; every request must present it. Printed once, at creation |
+| `device_tokens` | `[]` | per-device tokens (salted SHA-256 hashes only). Managed from the app |
 | `whisper_model` | `small` | `tiny`/`base`/`small`/`medium`/`large-v3`, add `.en` for English-only |
 | `language` | `auto` | auto-detect, or force `en`, `es`, … |
 | `compute_type` | `int8_float16` | GPU quantisation (`int8` on CPU) |
@@ -62,6 +68,8 @@ Created on first boot with a generated token. Edit it and restart
 | `cleanup_base_url` | `http://host.docker.internal:11434` | where the cleanup LLM lives |
 | `cleanup_temperature` | `0.0` | keep at 0 for deterministic formatting |
 | `cleanup_max_tokens` | `500` | cap on the formatted output length |
+| `expose_details` | `false` | `true` makes the unauthenticated `/health` verbose again (pre-1.3 behaviour) |
+| `docs` | `false` | OpenAPI `/docs` stays disabled |
 
 ### Environment variables (Docker-friendly)
 
@@ -76,6 +84,8 @@ VOZLAB_CLEANUP=true
 VOZLAB_CLEANUP_GUARD=true
 VOZLAB_CLEANUP_MODEL=qwen2.5:3b-instruct
 VOZLAB_CLEANUP_BASE_URL=http://ollama:11434
+VOZLAB_EXPOSE_DETAILS=false      # true = verbose /health (unauthenticated)
+VOZLAB_RATE_LIMIT=120           # requests/minute per client; 0 disables
 VOZLAB_CONFIG=/data/config.json # where to read/write the file
 ```
 

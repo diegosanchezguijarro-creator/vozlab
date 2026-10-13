@@ -68,9 +68,11 @@ a few seconds on CPU only.
 - ✨ Local AI cleanup: filler words removed, punctuation and capitalisation fixed,
   your language preserved (English and Spanish tested)
 - 🌍 Multilingual with automatic detection (90+ languages)
-- 🔒 Zero telemetry, no audio on disk, nothing logged unless you ask
+- 🔒 Zero telemetry, no audio on disk, transcripts never written to the log
+- 🔑 Token encrypted with Windows DPAPI; per-device tokens you can revoke
+- 🛠️ Unified settings: change models and language on the server from the app
 - 🐳 Server runs on NVIDIA GPU, CPU-only, NAS or Raspberry Pi
-- 📋 Clipboard-safe pasting, dark UI, first-run wizard, one-command updates
+- 📋 Clipboard-safe pasting, dark **and light** themes, first-run wizard
 
 Full feature list and screenshots: the
 [repository README](https://github.com/diegosanchezguijarro-creator/vozlab#readme).

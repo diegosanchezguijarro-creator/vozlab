@@ -81,9 +81,13 @@ prueba del micrófono. Después: mantén la tecla, habla, suelta.
 
 ## Capturas
 
-| Ajustes | Asistente inicial |
-|---|---|
-| <img src="docs/images/es-settings.png" alt="Ventana de ajustes"> | <img src="docs/images/es-wizard-server.png" alt="Asistente"> |
+| Dictado | Audio | Servidor |
+|---|---|---|
+| <img src="docs/images/es-settings-dictation.png" alt="Ajustes de dictado"> | <img src="docs/images/es-settings-audio.png" alt="Ajustes de audio"> | <img src="docs/images/es-settings-server.png" alt="Ajustes del servidor"> |
+
+| Apariencia | Sistema | Asistente inicial |
+|---|---|---|
+| <img src="docs/images/es-settings-appearance.png" alt="Ajustes de apariencia"> | <img src="docs/images/es-settings-system.png" alt="Ajustes de sistema"> | <img src="docs/images/es-wizard-server.png" alt="Asistente"> |
 
 ## Funciones
 
@@ -92,15 +96,19 @@ prueba del micrófono. Después: mantén la tecla, habla, suelta.
 - ✨ Limpieza con IA local: quita muletillas, arregla puntuación y mayúsculas,
   conserva el idioma (probado en español e inglés)
 - 🌍 Multilingüe con detección automática (más de 90 idiomas)
-- 🖥️ App de bandeja con interfaz oscura, píldora animada con nivel del micrófono
-- 🔒 Privado de serie: sin telemetría, sin audio en disco, sin registro salvo que lo actives
+- 🖥️ App de bandeja con temas **claro y oscuro**, píldora animada con nivel del micrófono
+- 🛠️ **Ajustes unificados**: elige modelo, idioma y modelo de formato desde la app, sin SSH ni reinicios
+- 🔒 Privado de serie: sin telemetría, sin audio en disco, y tus palabras nunca llegan al registro salvo que actives la depuración
+- 🔑 El token se guarda cifrado con DPAPI (Windows) y cada dispositivo puede tener su propio token revocable
 - 📋 Pegado seguro: usa Ctrl+V y restaura tu portapapeles
 - 🐳 Servidor en Docker: GPU NVIDIA, solo CPU, NAS o Raspberry Pi
 
 ## Privacidad
 
 - El audio solo va a **tu** servidor, en tu red local. Nunca se escribe en disco,
-  ni en el cliente ni en el servidor.
+  ni en el cliente ni en el servidor (se decodifica en memoria).
+- Tus dictados no se guardan: el registro anota tiempos e idioma, no tus frases.
+- El token se guarda **cifrado** con DPAPI y cada dispositivo puede tener el suyo.
 - **Sin telemetría.** La app habla con dos cosas: tu servidor y —solo si activas
   *Buscar actualizaciones*— la API pública de versiones de GitHub.
 - Detalles completos y cómo verificarlo: [docs/PRIVACY.md](docs/PRIVACY.md).
