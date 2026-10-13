@@ -354,6 +354,52 @@ def test_cancel_resets_duration():
     assert rec.duration() == 0.0
 
 
+# ----------------------------------------------------------- diagnostics ----
+def test_diagnostics_redacts_transcripts_and_token(tmp_path):
+    from vozlab import diagnostics
+
+    log = tmp_path / "vozlab.log"
+    log.write_text(
+        "2026-10-13 10:00:00 VozLab 1.1.2 starting\n"
+        "2026-10-13 10:00:05 dictation (0.42s): my bank password is hunter2\n"
+        "2026-10-13 10:00:06 [dbg] transcribed in 0.42s raw='um my bank password is hunter2' final='My bank password is hunter2.'\n"
+        "2026-10-13 10:00:07 server ok {'version': '1.1.2'}\n",
+        encoding="utf-8",
+    )
+    report = diagnostics.build_report(
+        {"token": "super-secret-token", "server_host": "192.168.0.23", "hotkey": 285},
+        log_path=str(log),
+        server_health={"version": "1.1.2", "whisper_model": "small", "device": "cuda"},
+    )
+
+    assert "hunter2" not in report, "dictated text must never appear in a report"
+    assert "my bank password" not in report
+    assert "super-secret-token" not in report
+    assert "<redacted>" in report
+
+    # useful information must survive
+    assert "192.168.0.23" in report
+    assert "whisper_model" in report and "cuda" in report
+    assert "VozLab 1.1.2 starting" in report
+
+
+def test_diagnostics_handles_missing_log(tmp_path):
+    from vozlab import diagnostics
+
+    report = diagnostics.build_report({"token": "x"}, log_path=str(tmp_path / "nope.log"))
+    assert "(no log file)" in report
+
+
+def test_diagnostics_write_report(tmp_path):
+    from vozlab import diagnostics
+
+    path = diagnostics.write_report(str(tmp_path), {"token": "x", "beeps": False})
+    assert os.path.exists(path)
+    content = open(path, encoding="utf-8").read()
+    assert "VozLab diagnostics" in content
+    assert "x" not in content.split("token")[1].split("\n")[0]  # token value redacted
+
+
 # ------------------------------------------------------------- updater ------
 def test_version_parsing():
     from vozlab.updater import parse_version

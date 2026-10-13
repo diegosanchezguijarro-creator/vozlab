@@ -75,7 +75,22 @@ def test_empty_output_rejected():
 
 # --------------------------------------------------------------- helpers -----
 def test_words_normalisation():
-    assert words("Hello, Wörld! 42 times") == ["hello", "wörld", "times"]
+    assert words("Hello, Wörld! 42 times") == ["hello", "world", "times"]
+
+
+def test_accents_are_not_treated_as_invented_words():
+    """Regression: restoring accents in Spanish must not trip the guard."""
+    ok, reason = cleanup_ok("hola que tal como estas", "Hola, qué tal, ¿cómo estás?")
+    assert ok, f"accent restoration wrongly rejected: {reason}"
+
+    ok, reason = cleanup_ok("necesito que prepares el informe para el martes",
+                            "Necesito que prepares el informe para el martes.")
+    assert ok, reason
+
+
+def test_numbers_to_digits_are_tolerated():
+    ok, _ = cleanup_ok("the meeting is at three pm", "The meeting is at 3 pm.")
+    assert ok
 
 
 def test_strip_decoration():

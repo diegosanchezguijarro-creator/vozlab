@@ -1,155 +1,343 @@
 # VozLab
 
-**Local, private voice dictation — talk to your own computer, in any app.**
-
-Hold a key, speak, release: your words appear where your cursor is. Speech
-recognition and text cleanup run on **your own hardware** (a machine with a GPU,
-a NAS, or any Linux box on your network). No cloud, no subscription, no audio
-leaving your LAN.
+**Local, private voice dictation for Windows.** Hold a key, speak, release — your
+words appear in whatever app you're using, formatted. Speech recognition and text
+cleanup run on **your own machine**. No cloud, no subscription, no account, and no
+audio leaving your network.
 
 <p align="center">
-  <img src="docs/images/pill-listening.png" width="320" alt="Listening pill">
-  <br>
-  <em>Hold your key and speak — the pill shows a live mic level.</em>
+  <img src="docs/images/demo.gif" width="432" alt="VozLab status pill: listening, transcribing, done">
 </p>
-
-<table>
-<tr>
-<td width="50%"><img src="docs/images/settings.png" alt="Settings window"></td>
-<td width="50%"><img src="docs/images/wizard-server.png" alt="Setup wizard"></td>
-</tr>
-<tr>
-<td align="center"><em>Everything in one window</em></td>
-<td align="center"><em>Three-step first-run setup</em></td>
-</tr>
-</table>
 
 <p align="center">
-  <img src="docs/images/pill-transcribing.png" width="300" alt="Transcribing pill">
-  <img src="docs/images/pill-done.png" width="300" alt="Done pill">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosanchezguijarro-creator/vozlab?include_prereleases&sort=semver" alt="Latest release"></a>
+  <a href="../../actions/workflows/ci.yml"><img src="https://github.com/diegosanchezguijarro-creator/vozlab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-informational.svg" alt="Windows 10/11">
+  <img src="https://img.shields.io/badge/telemetry-none-success.svg" alt="No telemetry">
 </p>
 
-```
-                 your laptop (Windows)                  your server (any machine on your LAN)
-   ┌───────────────────────────────────────┐   ┌────────────────────────────────────────────┐
-   │  VozLab app                           │   │  VozLab server (Docker)                    │
-   │                                       │   │                                            │
-   │  hold right Ctrl ──► record mic       │   │  Whisper (speech → text, GPU or CPU)       │
-   │        │                              │   │            │                               │
-   │        └── POST /transcribe ──────────┼──►│            ▼                               │
-   │                                       │   │  LLM cleanup (punctuation, filler words)   │
-   │  paste into the focused app ◄─────────┼───┤  returns formatted text                    │
-   └───────────────────────────────────────┘   └────────────────────────────────────────────┘
-```
+<p align="center">
+  <a href="README.es.md">🇪🇸 Leer en español</a>
+</p>
 
-## Features
+---
 
-- **Push-to-talk or toggle** dictation into any Windows app
-- **Beautiful, dark, native-feeling UI** (CustomTkinter): tray icon, animated
-  status pill with a live microphone level, setup wizard, grouped settings
-- **Automatic text cleanup** — removes "um/uh", fixes punctuation and capitalization, keeps your language
-- **Multilingual** — auto-detects your language; Spanish and 90+ others
-- **Auto-stop** mode: press once, speak, and it stops when you stop talking
-- **Clipboard-safe**: your clipboard is restored right after pasting
-- **100% local** — nothing is uploaded anywhere
+## What it does
+
+You keep a key held while you talk (~5 seconds of speech), VozLab:
+
+1. records the microphone,
+2. sends the audio to **your own server** (any Linux box, NAS or PC with Docker),
+3. transcribes it with **Whisper** and cleans it up with a **local LLM**
+   ("um", "uh" removed, punctuation and capitalisation fixed, your language kept),
+4. pastes the result into the app you were typing in.
+
+Typical wait: **under a second on a GPU**, a couple of seconds on CPU.
+
+**Why not just use a cloud dictation app?** Because this one is free, works
+offline, has no word limits, and your voice never leaves your house — useful for
+work notes, medical or legal text, or anything you'd rather not upload.
+
+---
 
 ## Quick start
 
-### 1. Server (5 minutes)
+Two parts: the **app** on your Windows laptop, and the **server** on a machine
+that stays at home. You need both once.
 
-On a machine with Docker (NVIDIA GPU recommended; CPU works too):
+### Track A — the app (2 minutes, no admin rights)
 
-```bash
-git clone https://github.com/<your-user>/vozlab.git
-cd vozlab/server
-bash install.sh
+Open **PowerShell** and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/diegosanchezguijarro-creator/vozlab/main/installer/deploy.ps1 | iex
 ```
 
-The installer prints the URL and **token** to use in the app. Full details:
-[docs/SERVER.md](docs/SERVER.md).
+This works **even with Smart App Control enabled** (it runs the app with your
+signed Python, not an unsigned `.exe`), verifies the download checksum, creates a
+Start-menu shortcut and starts VozLab. No Python yet? The script tells you the
+exact `winget` command to install it.
 
-### 2. Windows app (2 minutes)
+<details>
+<summary>Prefer to look before you run? (recommended for the cautious)</summary>
 
-Download `VozLab-Setup-x.y.z.exe` from
-[Releases](../../releases), run it (per-user install, no admin needed), and
-follow the wizard:
+1. Download [`installer/deploy.ps1`](installer/deploy.ps1) and
+   [`installer/VozLab.bat`](installer/VozLab.bat) (right-click → *Save link as…*).
+2. Double-click `VozLab.bat` — it runs the script above.
 
-1. Paste the server URL + token → *Test connection*
-2. Press the key you want to use for dictation
-3. Test your microphone → done
+Or download the `VozLab-<version>-src.zip` from the
+[latest release](../../releases/latest) and double-click `installer/VozLab.bat`
+inside it. Nothing is hidden: every line of the installer is a few dozen lines of
+PowerShell you can read.
+</details>
 
-Then hold your key, speak, release. Details:
-[docs/CLIENT.md](docs/CLIENT.md).
+<details>
+<summary>Alternative: classic installer (.exe)</summary>
 
-> **First run:** Windows SmartScreen may warn about an unknown publisher
-> (the app is not code-signed). Click *More info* → *Run anyway*.
+`VozLab-Setup-<version>.exe` from the [releases page](../../releases/latest) is a
+normal Windows installer — quicker, but it's an unsigned binary, so **Smart App
+Control will block it**. Turn SAC off (*Settings → Privacy & security → Windows
+Security → App & browser control → Smart App Control*) if you're comfortable with
+that, otherwise use the PowerShell route above.
+</details>
 
-## Requirements
+### Track B — the server (5 minutes, one command)
 
-| | Minimum | Recommended |
+On the machine that will do the heavy lifting (Ubuntu/Debian, or anything running
+Docker — NAS, Windows with Docker Desktop, macOS):
+
+```bash
+git clone https://github.com/diegosanchezguijarro-creator/vozlab.git
+cd vozlab/server
+bash install.sh --with-ai
+```
+
+`--with-ai` pulls the ready-made server image **plus Ollama** (the local cleanup
+AI) and downloads the model automatically (~4 GB once). With an NVIDIA GPU it
+uses it; without one it runs on CPU (works, several times slower).
+
+When it finishes you'll see:
+
+```
+Server URL : http://192.168.0.23:8092
+Token      : 3xKm9Qr2Lp8VtHzWnBc4YeSfUa1DgJ6o
+```
+
+> Already have Ollama on that machine? Use plain `bash install.sh` instead — that
+> builds from the checkout and reuses your Ollama.
+
+### Connect them
+
+Start VozLab from the Start menu. The first-run wizard asks for three things:
+
+| Step | What to enter |
+|---|---|
+| **Server** | `http://<the-server-IP>:8092` and the **token** printed above → *Test connection* |
+| **Dictation key** | press the key you want to hold, e.g. **right Ctrl** |
+| **Microphone** | record 3 seconds; you should see your sentence |
+
+Then hold your key, speak, release — the words appear where your cursor is.
+
+---
+
+## Screenshots
+
+| Settings | First-run wizard |
+|---|---|
+| <img src="docs/images/settings.png" alt="Settings window"> | <img src="docs/images/wizard-server.png" alt="Setup wizard"> |
+
+| Listening | Transcribing | Result |
 |---|---|---|
-| Server OS | Any Linux with Docker | Ubuntu 22.04+ / 24.04 |
-| Server GPU | CPU only (works, ~5-10× slower) | NVIDIA with ≥6 GB VRAM |
-| Server RAM | 4 GB | 8 GB+ |
-| Client | Windows 10/11 x64 | Windows 11 |
+| <img src="docs/images/pill-listening.png" alt="Listening pill"> | <img src="docs/images/pill-transcribing.png" alt="Transcribing pill"> | <img src="docs/images/pill-done.png" alt="Done pill"> |
 
-## Privacy
+*(Spanish versions are in [`docs/images`](docs/images) too: `es-*.png`.)*
 
-- Audio is sent only to the server you configure (your own machine), over your LAN.
-- The server keeps no recordings, no history, no database — audio is processed in
-  memory and discarded.
-- The cleanup LLM (via [Ollama](https://ollama.com)) also runs locally.
-- The Windows app makes exactly two kinds of request: `/health` (startup check)
-  and `/transcribe` (your recording). You can verify this in `client/vozlab/api.py`.
+---
+
+## Features
+
+| | |
+|---|---|
+| 🎙️ **Dictation into any app** | Works in Notepad, browsers, Office, Slack, IDEs — anywhere you can type. |
+| ⌨️ **Hold or toggle** | Push-to-talk, or press once to start / press again to stop. |
+| 🤖 **Optional auto-stop** | Press once, speak, and the recording ends when you stop talking. |
+| ✨ **AI cleanup** | Removes filler words, fixes punctuation and capitalisation, keeps your language (tested in English and Spanish). |
+| 🌍 **Multilingual** | Auto-detects the language; 90+ supported. |
+| 🖥️ **Beautiful tray app** | Animated status pill with a live mic level, dark UI, first-run wizard, settings in plain language. |
+| 🔒 **Private by design** | Audio goes only to your server. No telemetry. No audio written to disk. Nothing logged unless you ask. |
+| 📋 **Clipboard-safe** | Pastes with Ctrl+V and restores whatever you had copied. |
+| 🔁 **Easy updates** | `update.ps1` on the client, `docker compose pull` on the server, or the in-app update check. |
+| 🐳 **Runs anywhere** | Server is a Docker image: NVIDIA GPU, CPU-only, NAS, or Raspberry Pi (arm64 image coming). |
+
+---
 
 ## How it works
 
-1. The app records 16 kHz mono audio while your hotkey is held.
-2. `POST /transcribe` sends WAV bytes with your token.
-3. The server runs **faster-whisper** (CTranslate2) on GPU when available,
-   with Silero VAD to trim silence.
-4. The transcript is passed to a local LLM (default `llama3.1:8b` via Ollama)
-   with a "dictation formatter" prompt: filler words out, punctuation and
-   capitalization fixed, original language preserved, nothing added.
-5. The client pastes the result into the focused window (`Ctrl+V`, clipboard
-   restored afterwards).
-
-Typical latency on an RTX 4060: **0.7–2 s** for a sentence, including cleanup.
-
-## Repository layout
-
 ```
-server/     Docker-based transcription + cleanup service (FastAPI)
-client/     Windows tray app (CustomTkinter UI; built to .exe with PyInstaller)
-installer/  Inno Setup script producing VozLab-Setup-x.y.z.exe
-docs/       Setup, build and troubleshooting guides (+ UI screenshots)
-.github/    CI (tests on Linux+Windows) and release pipeline
+        your laptop (Windows)                      your server (Docker, on your LAN)
+ ┌──────────────────────────────────┐      ┌────────────────────────────────────────────┐
+ │  VozLab tray app                 │      │  VozLab server                             │
+ │                                  │      │                                            │
+ │  hold right Ctrl ──► record mic  │      │  1. Whisper (GPU or CPU)  speech → text    │
+ │        │                         │      │  2. Silero VAD trims the silence           │
+ │        └── POST /transcribe ─────┼─────►│  3. Ollama LLM  cleans up the text         │
+ │            (WAV + bearer token)  │      │     (filler words, punctuation, language)  │
+ │                                  │      │  4. a guard rejects any rewrite that       │
+ │  paste into the focused app ◄────┼──────┤     invents words (keeps the raw text)     │
+ └──────────────────────────────────┘      └────────────────────────────────────────────┘
 ```
+
+Details: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** ·
+API: **[docs/API.md](docs/API.md)**
+
+---
+
+## Requirements
+
+**Client** — Windows 10 or 11 (x64), a microphone, ~250 MB disk. No admin rights
+needed. Python 3.11+ (the installer offers to install it).
+
+**Server** — any machine that can run Docker:
+
+| | Minimum | Recommended |
+|---|---|---|
+| CPU | 2 cores | 4+ cores |
+| RAM | 4 GB | 8 GB+ |
+| Disk | 6 GB (images + models) | 10 GB |
+| GPU | — (CPU works) | NVIDIA, ≥6 GB VRAM, driver ≥550 |
+| OS | Any Linux with Docker | Ubuntu 22.04/24.04 |
+
+### Latency you should expect
+
+Measured with the default models (Whisper `small` + `qwen2.5:7b-instruct`), for a
+~6 second sentence:
+
+| Hardware | Transcription | Cleanup | Total |
+|---|---|---|---|
+| RTX 4060 (8 GB) | 0.2–0.6 s | 0.25 s | **~0.5–0.9 s** |
+| RTX 3060 / 2070 (6–12 GB) | 0.3–1.0 s | 0.3 s | ~0.7–1.3 s |
+| Modern CPU only (6+ cores) | 1.5–4 s | 3–8 s | ~5–12 s |
+
+Bigger models (`medium`) are more accurate and slower; `small.en` is faster and
+more accurate than `small` **if you only dictate English**. See
+[docs/MODELS.md](docs/MODELS.md) and run
+`python server/tools/benchmark_cleanup.py` yourself.
+
+---
+
+## Privacy & security
+
+VozLab was built privacy-first, and this is the complete list of what happens to
+your data:
+
+- **Audio** is recorded in memory, sent over your LAN to your server, transcribed
+  in memory and discarded. Nothing is written to disk — not on the client, not in
+  the server container.
+- **Transcripts** are pasted into your app. The client only writes them to
+  `vozlab.log` if you switch on *Debug logging*.
+- **No telemetry.** The app talks to exactly two things: your server, and — only
+  if you enable *Check for updates* in Settings — GitHub's public releases API to
+  compare version numbers. Leave it off and the app never touches the internet.
+- **Authentication** is a bearer token over your LAN; every request must present
+  it. Keep the server on your home network (or reach it through a VPN like
+  WireGuard/Tailscale) rather than exposing port 8092 to the internet.
+- **Secrets in the repo:** none. The server generates its own token on first boot
+  and stores it in `server/data/config.json` (git-ignored, mode 600).
+
+Full detail, including the threat model: **[docs/PRIVACY.md](docs/PRIVACY.md)**.
+
+---
 
 ## Configuration
 
-Server settings: `server/data/config.json` (whisper model, language, cleanup
-model/prompt, port). Client settings: tray icon → **Settings** — or
-`%APPDATA%\VozLab\config.json`.
+**Client** — tray icon → **Settings**: connection, dictation key and mode, audio
+device thresholds, AI formatting (on/off), language, appearance (pill, sounds,
+theme), system (start with Windows, updates, logs, diagnostics).
+Stored in `%APPDATA%\VozLab\config.json`.
 
-See [docs/SERVER.md](docs/SERVER.md) and [docs/CLIENT.md](docs/CLIENT.md).
+**Server** — `server/data/config.json`, or `VOZLAB_*` environment variables
+(handy with Docker):
 
-## Development
+| Setting | Default | What it does |
+|---|---|---|
+| `whisper_model` | `small` | `small` = multilingual, `small.en` = faster English-only, `medium` = most accurate |
+| `language` | `auto` | auto-detect, or force `en`, `es`, … |
+| `cleanup` | `true` | run the local AI formatting pass |
+| `cleanup_model` | `qwen2.5:7b-instruct` | any Ollama model (`qwen2.5:3b-instruct` for CPU) |
+| `cleanup_guard` | `true` | reject AI rewrites that invent words |
+| `token` | generated | shared secret required by every request |
 
-```bash
-# server
-cd server && docker compose up -d --build
+Every option is documented in **[docs/SERVER.md](docs/SERVER.md)**.
 
-# client (any OS, for development)
-cd client
-pip install -r requirements.txt -r requirements-dev.txt
-python -m pytest tests -q
-python run_vozlab.py
-```
+---
 
-Build the Windows installer: [docs/BUILD.md](docs/BUILD.md).
-Something not working? [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+## Updating
+
+| Part | How |
+|---|---|
+| Client | `powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\VozLab\update.ps1"` — or Settings → System → **Check now** / **Update now** |
+| Server | `cd server && docker compose pull && docker compose up -d` (add the same `-f` flags you installed with) |
+
+Your settings live in `%APPDATA%\VozLab` (client) and `server/data` (server) and
+survive updates.
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Nothing happens when I hold the key | Tray → **Change dictation key…** and press it again. Exclusive full-screen games swallow global keys — try tray → *Dictate (toggle)*. |
+| "Cannot reach the server" | Check `docker ps` on the server and that you're on the same network. `curl http://<server>:8092/health` from the laptop should return JSON. |
+| "The token was rejected" | Copy the token exactly from `docker logs vozlab` (it's printed at every startup). |
+| Nothing is transcribed | Windows → *Settings → Privacy → Microphone* → allow desktop apps. Speak for at least half a second. |
+| The text isn't what I said | Tray → *Open settings folder* → `vozlab.log` shows `raw=…` (what Whisper heard) and the final text, so you can tell whether it's audio quality or the AI pass. |
+| It's slow | Server on CPU? Set `whisper_model: small.en` and `cleanup_model: qwen2.5:3b-instruct`, or add a GPU. |
+
+More: **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — and
+*Settings → System → Export diagnostics* builds a shareable report with secrets
+removed, plus a one-click "report a problem" link.
+
+---
+
+## FAQ
+
+**Is it really free?** Yes, MIT-licensed, no account, no server costs. You pay
+only for the electricity of the machine running the server.
+
+**Can it work without a GPU?** Yes, CPU-only is supported — roughly 5–10× slower
+(a few seconds per sentence). Use the smaller models above.
+
+**Does it work with other languages?** Yes; the default `small` model is
+multilingual with automatic detection. Spanish and English are tested in CI.
+
+**Can I use it with my laptop away from home?** Yes, over a VPN (WireGuard,
+Tailscale) — or expose it to the internet only behind HTTPS and a reverse proxy.
+See [docs/REMOTE.md](docs/REMOTE.md).
+
+**Why not use whisper.cpp / a cloud API?** Both are possible swaps: the server is
+a thin FastAPI wrapper (`server/server.py`). Cloud APIs would defeat the point.
+
+**Can I share it with friends?** Yes — they install the app the same way and run
+their own server (`install.sh --with-ai`). Nothing points at your machine.
+
+**Is there a macOS/Linux client?** Not officially yet. The client is plain Python,
+so `python run_vozlab.py` works on Linux/macOS for development
+([docs/BUILD.md](docs/BUILD.md)).
+
+---
+
+## Roadmap
+
+- Unified settings: configure the server (models, language, logs) from the app
+- Per-app formatting profiles (formal in email, casual in chat)
+- Custom vocabulary ("VozLab", your colleagues' names)
+- arm64 server image (Raspberry Pi 5, NAS) and a macOS Apple Silicon path
+- TLS with certificate pinning + per-device tokens
+- Automatic LAN server discovery in the wizard
+
+---
+
+## Contributing
+
+Bug reports and pull requests are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md). Good first issues: translations (the UI is
+English/Spanish today), extra model presets, docs typos.
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Credits
+
+Built on [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (MIT),
+[CTranslate2](https://github.com/OpenNMT/CTranslate2) (MIT),
+[Whisper](https://github.com/openai/whisper) models (MIT),
+[Ollama](https://ollama.com) and [Qwen2.5](https://github.com/QwenLM/Qwen2.5)
+(Apache-2.0), [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
+(MIT), [sounddevice](https://python-sounddevice.readthedocs.io) (MIT),
+[keyboard](https://github.com/boppreh/keyboard) (MIT) and
+[FastAPI](https://fastapi.tiangolo.com) (MIT). Thanks to
+[Wispr Flow](https://wisprflow.ai) for proving how good this can feel.

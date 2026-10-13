@@ -63,6 +63,15 @@ class FakeApp:
     def open_config_folder(self):
         pass
 
+    def updater_script(self):
+        return None
+
+    def run_updater(self):
+        print("  [preview] run_updater()")
+
+    def check_for_updates(self, manual: bool = False):
+        print(f"  [preview] check_for_updates(manual={manual})")
+
 
 def screenshot(name: str, prefix: str = "") -> None:
     path = os.path.join(SHOT_DIR, f"{prefix}{name}.png")

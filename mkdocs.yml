@@ -1,0 +1,81 @@
+site_name: VozLab
+site_description: Local, private voice dictation for Windows — your own Whisper + LLM server.
+site_url: https://diegosanchezguijarro-creator.github.io/vozlab/
+repo_url: https://github.com/diegosanchezguijarro-creator/vozlab
+repo_name: diegosanchezguijarro-creator/vozlab
+edit_uri: edit/main/docs/
+copyright: MIT licensed · built by the VozLab contributors
+
+theme:
+  name: material
+  logo: images/icon.png
+  favicon: images/icon.png
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - toc.follow
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/diegosanchezguijarro-creator/vozlab
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+# docs/ pages link to files outside the site (source code, repo-root docs);
+# those are fine on GitHub, so don't fail the build over them.
+validation:
+  links:
+    not_found: ignore
+    anchors: warn
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Install the app (Windows): CLIENT.md
+      - Set up the server: SERVER.md
+      - Using it away from home: REMOTE.md
+  - Reference:
+      - Models & performance: MODELS.md
+      - Configuration: CONFIGURATION.md
+      - HTTP API: API.md
+      - Architecture: ARCHITECTURE.md
+  - Help:
+      - Troubleshooting: TROUBLESHOOTING.md
+      - FAQ: FAQ.md
+  - Privacy & security:
+      - Privacy: PRIVACY.md
+      - Security policy: SECURITY.md
+  - Development:
+      - Building & packaging: BUILD.md
+      - Contributing: CONTRIBUTING.md
+      - Changelog: CHANGELOG.md
+
+extra_css:
+  - stylesheets/extra.css

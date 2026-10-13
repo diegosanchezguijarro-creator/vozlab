@@ -40,9 +40,10 @@ class TrayIcon:
     """pystray wrapper. Menu callbacks are forwarded to the app."""
 
     def __init__(self, tr, on_dictate, on_settings, on_calibrate,
-                 on_folder, on_about, on_quit):
+                 on_folder, on_about, on_quit, on_docs=None):
         self.tr = tr
         self.state = "offline"
+        on_docs = on_docs or (lambda: None)
         self._icon = pystray.Icon(
             "vozlab",
             icon=make_icon(self.state),
@@ -52,6 +53,8 @@ class TrayIcon:
                 pystray.Menu.SEPARATOR,
                 pystray.MenuItem(lambda _i: tr("menu_settings"), lambda *_: on_settings()),
                 pystray.MenuItem(lambda _i: tr("menu_calibrate"), lambda *_: on_calibrate()),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem(lambda _i: tr("menu_docs"), lambda *_: on_docs()),
                 pystray.MenuItem(lambda _i: tr("menu_folder"), lambda *_: on_folder()),
                 pystray.MenuItem(lambda _i: tr("menu_about"), lambda *_: on_about()),
                 pystray.Menu.SEPARATOR,

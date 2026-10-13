@@ -1,0 +1,75 @@
+name: Bug report
+description: Something doesn't work — dictation, installation, the server…
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Two things make bug reports
+        much faster to solve:
+
+        1. **Settings → System → Export diagnostics** (in the app) produces a
+           report with your versions, config and last log lines, **with the token
+           and any transcript text removed**. Attach it here.
+        2. The `raw=…` line from `vozlab.log` tells us whether Whisper misheard or
+           the AI rewrote something.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, what happened instead.
+      placeholder: |
+        I held right Ctrl, said "hello world", released…
+        Expected: the text appears.
+        Instead: nothing happened / wrong text.
+    validations:
+      required: true
+
+  - type: input
+    id: client-version
+    attributes:
+      label: Client version
+      description: Settings → System, or the About window (tray → About VozLab).
+      placeholder: v1.1.2
+    validations:
+      required: true
+
+  - type: input
+    id: server-version
+    attributes:
+      label: Server version and device
+      description: Output of `curl http://<server>:8092/health`
+      placeholder: '{"version":"1.1.2","device":"cuda","whisper_model":"small",…}'
+    validations:
+      required: false
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install the app?
+      options:
+        - PowerShell one-liner (deploy.ps1)
+        - VozLab.bat / source zip
+        - Installer .exe
+        - Running from source (python run_vozlab.py)
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 23H2
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics / logs
+      description: Paste the diagnostics report or the relevant `vozlab.log` lines (remove anything private first).
+      render: text
+    validations:
+      required: false

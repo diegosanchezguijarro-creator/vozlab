@@ -83,6 +83,7 @@ class VozLabApp:
             on_settings=lambda: self.post(self.open_settings),
             on_calibrate=lambda: self.post(self.open_calibration),
             on_folder=lambda: self.post(self.open_config_folder),
+            on_docs=lambda: self.post(self.open_docs),
             on_about=lambda: self.post(self.open_about),
             on_quit=lambda: self.post(self.quit_app),
         )
@@ -90,6 +91,7 @@ class VozLabApp:
         self.wizard = None
         self.last_update_message = ""
         self.last_update_url = ""
+        self.last_server_health = None
 
     # -- thread marshalling --------------------------------------------------
     def post(self, fn) -> None:
@@ -138,6 +140,7 @@ class VozLabApp:
         threading.Thread(target=run, daemon=True).start()
 
     def _server_ok(self, health: dict) -> None:
+        self.last_server_health = health
         self._log("server ok", health)
         server_version = health.get("version") or ""
         if server_version and updater.version_mismatch(server_version, VERSION):
@@ -396,6 +399,12 @@ class VozLabApp:
 
     def open_about(self) -> None:
         about_ui.AboutWindow(self)
+
+    def open_docs(self) -> None:
+        import webbrowser
+
+        from . import diagnostics
+        webbrowser.open(diagnostics.DOCS_URL)
 
     def apply_config(self, cfg: dict) -> None:
         self.cfg = cfg

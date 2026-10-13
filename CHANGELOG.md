@@ -3,6 +3,57 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-10-13
+
+**A release aimed at strangers on the internet: installable without code signing,
+documented end to end.**
+
+### Added — distribution
+- `installer/deploy.ps1`: one-click installer that works **with Smart App Control
+  enabled**. Downloads the release source, verifies its SHA256 against
+  `SHA256SUMS`, builds a private virtual environment and launches the app with the
+  signed `pythonw.exe`. Plus `VozLab.bat` (double-click) and `update.ps1`
+  (in-place updates that keep your settings).
+- Release workflow now publishes `VozLab-<v>-src.zip` and `SHA256SUMS`, and builds
+  + pushes `ghcr.io/<owner>/vozlab-server:<tag|latest>` so the server needs no
+  local build.
+- `docker-compose.full.yml`: all-in-one stack (server + Ollama + model preload).
+- `install.sh --with-ai` / `--cpu` / `--help` with preflight checks.
+
+### Added — client
+- `updater.py` and in-app update flow: *Check now*, *Update now* (runs the
+  updater), and an opt-in automatic check. **Off by default — zero telemetry.**
+- `diagnostics.py` + *Settings → System → Export diagnostics*: a support report
+  with the token and every dictated word removed, plus *Report a problem* and
+  *Documentation* buttons.
+- Server/client version-mismatch warning with upgrade instructions.
+
+### Added — documentation
+- Complete README rewrite (two-track quick start, screenshots, latency tables,
+  privacy, FAQ, roadmap) and a Spanish mirror (`README.es.md`).
+- New guides: `ARCHITECTURE`, `API`, `CONFIGURATION`, `MODELS`, `PRIVACY`,
+  `REMOTE`, `FAQ`, plus `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`, issue and
+  PR templates.
+- Docs site (MkDocs Material) with a GitHub Pages workflow.
+- Animated demo GIF generated from the real UI, and regenerated screenshots.
+
+### Changed
+- GPU support is **opt-in** in Compose (`.gpu.yml` overlays) because Compose
+  cannot remove device reservations in an override — CPU-only machines now start
+  cleanly on the base files.
+- Default cleanup model is **`qwen2.5:7b-instruct`** (Apache-2.0) instead of
+  `llama3.1:8b` (Meta licence): same 8/8 quality score and 0.25 s latency in the
+  benchmark, better Spanish punctuation, friendlier licence for redistribution.
+- The cleanup guard is now accent-insensitive, so restoring accents in Spanish
+  ("que tal" → "¿qué tal?") is no longer mistaken for inventing words.
+- `/version` and `/health` expose `api: 1`; `VOZLAB_*` environment variables can
+  override any server setting.
+
+### Fixed
+- Spanish text is no longer rejected by the cleanup guard when the model adds
+  accents.
+- `deploy.ps1`-installed apps are updated in place instead of being duplicated.
+
 ## [1.1.1] — 2026-10-13
 
 ### Changed

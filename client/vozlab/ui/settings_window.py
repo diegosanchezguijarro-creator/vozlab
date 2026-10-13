@@ -1,12 +1,15 @@
 """Settings window — grouped cards, toggles and live connection status."""
 
+import os
 import threading
 import tkinter as tk
+import webbrowser
 
 import customtkinter as ctk
 
 from .. import APP_NAME, VERSION
 from .. import config as cfgmod
+from .. import diagnostics
 from .. import hotkeys as hotkeys_mod
 from ..api import ApiError, VozLabAPI
 from . import theme, widgets
@@ -273,6 +276,30 @@ class SettingsWindow:
                       border_width=1, border_color=theme.BORDER, hover_color=theme.SURFACE_2,
                       command=self.app.open_config_folder).pack(anchor="w", pady=(theme.PAD_S, 0))
 
+        # --- help & support (no telemetry: the user sends this themselves) ---
+        help_row = ctk.CTkFrame(card.body, fg_color="transparent")
+        help_row.pack(fill="x", pady=(theme.PAD_S, 0))
+        ctk.CTkButton(help_row, text=tr("settings_diagnostics"), height=32, width=150,
+                      font=theme.font(12), corner_radius=theme.RADIUS_CONTROL,
+                      fg_color="transparent", border_width=1, border_color=theme.BORDER,
+                      hover_color=theme.SURFACE_2,
+                      command=self._export_diagnostics).pack(side="left")
+        ctk.CTkButton(help_row, text=tr("settings_report_issue"), height=32, width=150,
+                      font=theme.font(12), corner_radius=theme.RADIUS_CONTROL,
+                      fg_color="transparent", border_width=1, border_color=theme.BORDER,
+                      hover_color=theme.SURFACE_2,
+                      command=lambda: webbrowser.open(diagnostics.ISSUE_URL)).pack(
+            side="left", padx=8)
+        ctk.CTkButton(help_row, text=tr("settings_help"), height=32, width=110,
+                      font=theme.font(12), corner_radius=theme.RADIUS_CONTROL,
+                      fg_color="transparent", border_width=1, border_color=theme.BORDER,
+                      hover_color=theme.SURFACE_2,
+                      command=lambda: webbrowser.open(diagnostics.DOCS_URL)).pack(side="left")
+        self.diag_label = ctk.CTkLabel(card.body, text="", font=theme.font(11),
+                                       text_color=theme.TEXT_MUTED, wraplength=440,
+                                       justify="left")
+        self.diag_label.pack(anchor="w", pady=(6, 0))
+
         self._show_last_update()
         self.app.update_reporter = self._show_last_update
 
@@ -291,6 +318,26 @@ class SettingsWindow:
     def _check_updates(self) -> None:
         self.update_label.configure(text="…", text_color=theme.TEXT_MUTED)
         self.app.check_for_updates(manual=True)
+
+    def _export_diagnostics(self) -> None:
+        """Write a redacted support report next to the settings/log files."""
+        tr = self.app.tr
+        try:
+            cfg = dict(self.cfg)
+            cfgmod.parse_server_url(self.server_field.get(), cfg)
+            cfg["token"] = self.token_field.get()
+            path = diagnostics.write_report(
+                cfgmod.config_dir(), cfg,
+                log_path=os.path.join(cfgmod.config_dir(), "vozlab.log"),
+                server_health=getattr(self.app, "last_server_health", None),
+            )
+        except Exception as e:  # noqa: BLE001
+            self.diag_label.configure(text=tr("err_generic", error=e), text_color=theme.ERROR)
+            return
+        self.diag_label.configure(
+            text=tr("settings_diagnostics_done", file=os.path.basename(path)),
+            text_color=theme.OK)
+        self.app.open_config_folder()
 
     def _switch(self, parent, text: str, value: bool, hint: str = ""):
         row = ctk.CTkFrame(parent, fg_color="transparent")

@@ -1,0 +1,4 @@
+/* VozLab docs tweaks */
+:root { --md-typeset-a-color: #3b82f6; }
+.md-typeset img { border-radius: 10px; }
+.md-typeset .grid.cards > ul > li { border-radius: 12px; }

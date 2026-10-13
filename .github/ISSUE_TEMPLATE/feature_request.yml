@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest something that would make VozLab better
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation, not the solution — it helps us find the best fix.
+      placeholder: I dictate into three apps and…
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Client (Windows app, UI, dictation)
+        - Server (models, API, performance)
+        - Installer / updates
+        - Documentation
+        - Privacy / security
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Keep in mind
+      options:
+        - label: This keeps VozLab 100% local (no cloud APIs, no telemetry)
+          required: true

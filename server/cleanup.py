@@ -12,6 +12,7 @@ you."). Two defences:
 """
 
 import re
+import unicodedata
 
 DEFAULT_CLEANUP_PROMPT = (
     "You are a silent text formatter for a dictation app. You are NOT a chat "
@@ -54,9 +55,15 @@ _OFF_SCRIPT_MARKERS = (
 )
 
 
+def _strip_accents(text: str) -> str:
+    """'qué' -> 'que' so that adding accents is not mistaken for inventing words."""
+    return "".join(c for c in unicodedata.normalize("NFKD", text)
+                   if not unicodedata.combining(c))
+
+
 def words(text: str) -> list[str]:
-    """Letters-only, lowercased words (accents preserved, numbers dropped)."""
-    return re.findall(r"[^\W\d_]+", text.lower(), re.UNICODE)
+    """Letters-only, lowercased, accent-insensitive words (numbers dropped)."""
+    return re.findall(r"[^\W\d_]+", _strip_accents(text.lower()), re.UNICODE)
 
 
 def cleanup_ok(raw: str, cleaned: str) -> tuple[bool, str]:

@@ -27,7 +27,7 @@ from starlette.concurrency import run_in_threadpool
 
 from cleanup import DEFAULT_CLEANUP_PROMPT, cleanup_ok, strip_decoration
 
-VERSION = "1.1.2"
+VERSION = "1.2.0"
 NAME = "vozlab"
 API_VERSION = 1          # bump when the HTTP contract changes incompatibly
 
@@ -54,7 +54,7 @@ DEFAULT_CONFIG = {
     "compute_type": "int8_float16",
     "beam_size": 5,
     "cleanup": True,
-    "cleanup_model": "llama3.1:8b",
+    "cleanup_model": "qwen2.5:7b-instruct",
     "cleanup_base_url": "http://host.docker.internal:11434",
     "cleanup_temperature": 0.0,
     "cleanup_max_tokens": 500,
