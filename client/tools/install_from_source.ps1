@@ -22,29 +22,39 @@ Write-Host "  source : $ClientDir"
 # ---------------------------------------------------------------- python ----
 $python = $null
 foreach ($candidate in @('python', 'py')) {
-    $cmd = Get-Command $candidate -ErrorAction SilentlyContinue
-    if ($cmd) {
-        $args = if ($candidate -eq 'py') { @('-3', '--version') } else { @('--version') }
-        try { & $candidate @args | Out-Null; $python = $candidate; break } catch { }
+    if (-not (Get-Command $candidate -ErrorAction SilentlyContinue)) { continue }
+    $probeArgs = if ($candidate -eq 'py') { @('-3', '--version') } else { @('--version') }
+    try {
+        $out = & $candidate @probeArgs 2>&1
+        if ($LASTEXITCODE -eq 0 -and "$out" -match '^Python 3\.') { $python = $candidate; break }
+    } catch {
+        # e.g. the Microsoft Store "python" stub — try the next candidate
     }
 }
 if (-not $python) {
-    throw "Python was not found. Install it first:  winget install -e --id Python.Python.3.12"
+    throw "Python 3 was not found. Install it first:  winget install -e --id Python.Python.3.12"
 }
-$version = (& $python --version) -replace 'Python ', ''
-Write-Host "  python : $version ($python)"
+$pythonExe = (Get-Command $python -CommandType Application).Source
+$probe = if ($python -eq 'py') { & py -3 --version } else { & python --version }
+$version = ("$probe" -replace 'Python ', '')
+Write-Host "  python : $version  ($pythonExe)"
 
 # ------------------------------------------------------------------ venv ----
 if (-not (Test-Path (Join-Path $VenvDir 'Scripts\pythonw.exe'))) {
     Write-Host "`nCreating virtual environment..." -ForegroundColor Cyan
-    & $python -m venv $VenvDir
+    & $pythonExe -m venv $VenvDir
+}
+if (-not (Test-Path (Join-Path $VenvDir 'Scripts\pythonw.exe'))) {
+    throw "Could not create the virtual environment in $VenvDir"
 }
 $venvPython = Join-Path $VenvDir 'Scripts\python.exe'
 $venvPythonW = Join-Path $VenvDir 'Scripts\pythonw.exe'
 
 Write-Host "`nInstalling dependencies (a minute or two)..." -ForegroundColor Cyan
 & $venvPython -m pip install --quiet --upgrade pip
+if ($LASTEXITCODE -ne 0) { throw "Could not upgrade pip (exit $LASTEXITCODE)" }
 & $venvPython -m pip install --quiet -r (Join-Path $ClientDir 'requirements.txt')
+if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed (exit $LASTEXITCODE)" }
 
 # -------------------------------------------------------------- shortcut ----
 Write-Host "`nCreating Start Menu shortcut..." -ForegroundColor Cyan
