@@ -28,11 +28,16 @@ jobs:
         working-directory: client
         run: |
           code_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("vozlab/__init__.py").read()).group(1))')"
+          server_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("../server/server.py").read()).group(1))')"
           if [ "$code_version" != "${{ steps.ver.outputs.version }}" ]; then
-            echo "::error::tag v${{ steps.ver.outputs.version }} does not match VERSION=$code_version in vozlab/__init__.py"
+            echo "::error::tag v${{ steps.ver.outputs.version }} does not match client VERSION=$code_version"
             exit 1
           fi
-          echo "version $code_version OK"
+          if [ "$server_version" != "${{ steps.ver.outputs.version }}" ]; then
+            echo "::error::tag v${{ steps.ver.outputs.version }} does not match server VERSION=$server_version"
+            exit 1
+          fi
+          echo "version $code_version OK (client + server)"
 
       - name: Install dependencies
         working-directory: client
