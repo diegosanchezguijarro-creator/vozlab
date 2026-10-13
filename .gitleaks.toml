@@ -1,0 +1,13 @@
+# Keep the default rule set, and excuse exactly one thing: the obviously-fake
+# credential string used as a *fixture* by the log-redaction test. Real secrets
+# are never allowlisted — this value exists only to be removed by
+# `log.redact()` in client/tests/test_secrets.py, and the test asserts that the
+# output contains "***" instead of it.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake credential that only exists to be redacted in a test"
+regexes = [
+  '''abc123def456''',
+]

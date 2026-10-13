@@ -30,7 +30,7 @@ SHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 
 DEMO_CONFIG = {
     "server_host": "192.168.0.23", "server_port": 8092,
-    "token": "3xKm9Qr2Lp8VtHzWnBc4YeSfUa1DgJ6o",
+    "token": "demo-token-only-for-screenshots",
     "hotkey": 285, "hotkey_mode": "hold", "auto_stop": False,
     "cleanup": True, "language": "auto", "beeps": True,
     "restore_clipboard": True, "show_pill": True, "pill_position": "bottom-center",

@@ -44,10 +44,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install test dependencies
-        run: pip install pytest pyyaml
+        # the API tests need the web stack (fastapi/starlette/httpx); the heavy
+        # faster-whisper import only happens lazily when the server starts
+        run: pip install pytest pyyaml fastapi starlette httpx
       - name: Byte-compile server
         run: python -m compileall -q server/server.py server/cleanup.py
-      - name: Cleanup prompt + guard tests
+      - name: API + cleanup prompt + guard tests
         working-directory: server
         run: python -m pytest tests -q
       - name: Validate compose files

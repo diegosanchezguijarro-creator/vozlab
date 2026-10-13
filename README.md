@@ -102,7 +102,7 @@ When it finishes you'll see:
 
 ```
 Server URL : http://192.168.0.23:8092
-Token      : 3xKm9Qr2Lp8VtHzWnBc4YeSfUa1DgJ6o
+Token      : PASTE-THE-TOKEN-PRINTED-ABOVE
 ```
 
 > Already have Ollama on that machine? Use plain `bash install.sh` instead — that

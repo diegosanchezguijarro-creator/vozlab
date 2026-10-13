@@ -42,7 +42,7 @@ and prints:
 
 ```
 Server URL : http://192.168.0.23:8092
-Token      : 3xKm9Qr2Lp8VtHzWnBc4YeSfUa1DgJ6o
+Token      : PASTE-THE-TOKEN-PRINTED-ABOVE
 ```
 
 First start downloads the Whisper model (~500 MB) into `server/data/hf/`.

@@ -87,6 +87,10 @@ def test_saved_config_has_no_plain_token(windows, tmp_config):
 
 
 def test_config_file_is_owner_only(windows, tmp_config):
+    if os.name != "posix":
+        # Windows has no POSIX mode bits: os.chmod only toggles the read-only
+        # flag, and the protection there is DPAPI + the user's own ACL.
+        pytest.skip("POSIX file modes do not exist on Windows")
     cfg = cfgmod.load()
     cfg["token"] = "t"
     cfgmod.save(cfg)
