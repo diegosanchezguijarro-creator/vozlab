@@ -1,7 +1,13 @@
-"""Logging that works both in console (dev) and windowed (frozen) builds."""
+"""Logging that works both in console (dev) and windowed (frozen) builds.
+
+Everything the app writes to disk goes through `log()`, which also scrubs known
+secrets (the server token) so a log file can be shared for support without
+leaking the key to the machine.
+"""
 
 import datetime
 import os
+import re
 import sys
 import threading
 
@@ -11,6 +17,26 @@ _lock = threading.Lock()
 _debug = False
 _log_path = None
 _console = None
+_secrets: set[str] = set()
+
+_BEARER = re.compile(r"(Bearer\s+)\S+", re.IGNORECASE)
+_JSON_TOKEN = re.compile(r'("?token"?\s*[:=]\s*"?)[^",\s}]+', re.IGNORECASE)
+
+
+def set_secrets(values) -> None:
+    """Register values that must never appear in the log file."""
+    global _secrets
+    _secrets = {str(v) for v in values if v and len(str(v)) >= 8}
+
+
+def redact(text: str) -> str:
+    """Mask anything that looks like a credential."""
+    if not isinstance(text, str):
+        text = str(text)
+    for secret in _secrets:
+        text = text.replace(secret, "***")
+    text = _BEARER.sub(r"\1***", text)
+    return _JSON_TOKEN.sub(r"\1***", text)
 
 
 def setup(debug: bool = False) -> str:
@@ -38,7 +64,7 @@ def setup(debug: bool = False) -> str:
 
 def log(msg: str) -> None:
     """Always write to the log file; mirror to the console when there is one."""
-    line = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {msg}"
+    line = f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {redact(msg)}"
     with _lock:
         if _log_path:
             try:
@@ -56,6 +82,32 @@ def log(msg: str) -> None:
 def debug(msg: str) -> None:
     if _debug:
         log(f"[dbg] {msg}")
+
+
+def read(lines: int = 200) -> str:
+    """The last `lines` lines of the log file, secrets already scrubbed."""
+    if not _log_path or not os.path.exists(_log_path):
+        return ""
+    try:
+        with open(_log_path, encoding="utf-8", errors="replace") as f:
+            return "".join(f.readlines()[-max(1, lines):])
+    except OSError:
+        return ""
+
+
+def clear() -> bool:
+    """Truncate the log file (the user asked for it to be empty)."""
+    if not _log_path:
+        return False
+    try:
+        with open(_log_path, "w", encoding="utf-8"):
+            pass
+        for rotated in (_log_path + ".1",):
+            if os.path.exists(rotated):
+                os.remove(rotated)
+        return True
+    except OSError:
+        return False
 
 
 def log_path() -> str:

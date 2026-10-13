@@ -2,7 +2,6 @@
 
 import threading
 import time
-import tkinter as tk
 
 import customtkinter as ctk
 
@@ -258,9 +257,9 @@ class Wizard:
                 text = (out.get("text") or "").strip() or "(empty)"
                 self.app.post(lambda: self.mic_label.configure(
                     text=tr("wizard_mic_result", text=text), text_color=theme.OK))
-            except Exception as e:  # noqa: BLE001
-                self.app.post(lambda: self.mic_label.configure(
-                    text=tr("err_generic", error=e), text_color=theme.ERROR))
+            except Exception as err:  # noqa: BLE001
+                self.app.post(lambda err=err: self.mic_label.configure(
+                    text=tr("err_generic", error=err), text_color=theme.ERROR))
             finally:
                 self.app.post(lambda: self.mic_btn.configure(state="normal"))
 

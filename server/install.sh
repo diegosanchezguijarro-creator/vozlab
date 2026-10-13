@@ -64,6 +64,10 @@ fi
 
 # ------------------------------------------------------------------- start --
 mkdir -p data
+# The container runs unprivileged (uid 1000); make sure it can write its data.
+if ! chown -R 1000:1000 data 2>/dev/null; then
+  warn "Could not chown ./data to 1000:1000 — if the container cannot write, run: sudo chown -R 1000:1000 data"
+fi
 if $WITH_AI; then
   say "Starting VozLab + Ollama (first run downloads images and the model, ~5 GB)"
 else
@@ -97,10 +101,10 @@ $(printf '\033[1;32m')
   In the VozLab app, connect to:
 
       Server URL : http://${LAN_IP:-<this-machine-IP>}:8092
-      Token      : ${TOKEN:-see: docker logs vozlab}
+      Token      : ${TOKEN:-see server/data/config.json}
 
   Handy:
-      docker logs -f vozlab      # live logs (token is printed at startup)
+      docker logs -f vozlab      # live logs
       docker compose $( $WITH_AI && echo '-f docker-compose.full.yml ' )restart
       docker compose $( $WITH_AI && echo '-f docker-compose.full.yml ' )down
 

@@ -120,6 +120,7 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v6
+        id: build
         with:
           context: server
           file: server/Dockerfile
@@ -130,3 +131,17 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/vozlab-server:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Supply-chain paperwork: a signed-in-image SBOM of everything we ship.
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/vozlab-server:${{ github.ref_name }}
+          artifact-name: vozlab-server-${{ github.ref_name }}.spdx.json
+          output-file: vozlab-server.spdx.json
+          format: spdx-json
+
+      - name: Attach the SBOM to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: vozlab-server.spdx.json

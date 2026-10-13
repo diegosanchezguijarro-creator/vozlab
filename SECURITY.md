@@ -16,7 +16,7 @@ reporting, since fixes ship there first.
 
 Include: what you did, what happened, what you expected, and the version numbers
 (`vozlab.log` has the client version; `docker logs vozlab` prints the server
-version at startup). A proof-of-concept helps enormously.
+version at startup — the token is only printed once, when it is created). A proof-of-concept helps enormously.
 
 You can expect an acknowledgement within a few days, an assessment with a rough
 timeline, and credit in the release notes if you'd like it.

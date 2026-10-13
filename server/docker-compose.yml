@@ -11,3 +11,12 @@ services:
     # Reach ollama (the cleanup LLM) on the host at host.docker.internal:11434
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # --- hardening ---------------------------------------------------------
+    user: "1000:1000"                 # match install.sh's chown of ./data
+    read_only: true                   # the container filesystem is immutable
+    tmpfs:
+      - /tmp:size=256m                # writable scratch, kept in RAM
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

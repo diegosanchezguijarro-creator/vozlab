@@ -7,6 +7,8 @@
 import json
 import os
 import sys
+import threading
+import time
 import types
 
 import pytest
@@ -222,18 +224,16 @@ def test_hotkey_worker_dispatches(hotkeys_mod):
     mgr = hotkeys_mod.HotkeyManager(on_down=lambda: seen.append("down"),
                                     on_up=lambda: seen.append("up"))
     mgr.set_hotkey(285)
-    mgr._running = True
+    stop = threading.Event()
     mgr._queue.put("down")
     mgr._queue.put("up")
-    import threading
-    t = threading.Thread(target=mgr._run_worker, daemon=True)
+    t = threading.Thread(target=mgr._run_worker, args=(stop,), daemon=True)
     t.start()
     for _ in range(50):
         if len(seen) == 2:
             break
-        import time
         time.sleep(0.02)
-    mgr._running = False
+    stop.set()
     assert seen == ["down", "up"]
 
 

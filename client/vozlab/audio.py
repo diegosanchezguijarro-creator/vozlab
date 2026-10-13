@@ -29,7 +29,8 @@ class Recorder:
                  silence_rms: float = 0.012,
                  auto_stop: bool = False,
                  on_auto_stop=None,
-                 on_level=None):
+                 on_level=None,
+                 device=None):
         self.sample_rate = sample_rate
         self.max_seconds = max_seconds
         self.silence_ms = silence_ms
@@ -37,6 +38,7 @@ class Recorder:
         self.auto_stop = auto_stop
         self.on_auto_stop = on_auto_stop      # called (once) when silence ends the recording
         self.on_level = on_level              # called with current RMS (for UI meters)
+        self.device = device                  # None = system default, or a device name/index
 
         self._stream = None
         self._frames = []
@@ -85,6 +87,7 @@ class Recorder:
                 channels=1,
                 dtype="float32",
                 callback=self._callback,
+                device=self.device if self.device is not None else None,
             )
             self._stream.start()
         except Exception as e:  # PortAudio error, no device, privacy block...
@@ -180,6 +183,43 @@ class Recorder:
 def _now_ms() -> float:
     import time
     return time.time() * 1000.0
+
+
+def list_input_devices() -> list[dict]:
+    """Microphones the user can choose from (empty list when unavailable)."""
+    if sd is None:
+        return []
+    try:
+        default_in = sd.default.device[0] if sd.default.device else None
+    except (AttributeError, IndexError, TypeError):
+        default_in = None
+    devices = []
+    try:
+        for index, dev in enumerate(sd.query_devices()):
+            if dev.get("max_input_channels", 0) < 1:
+                continue
+            devices.append({
+                "index": index,
+                "name": dev.get("name", f"device {index}"),
+                "channels": dev.get("max_input_channels", 0),
+                "sample_rate": int(dev.get("default_samplerate") or 0),
+                "default": index == default_in,
+            })
+    except Exception:  # noqa: BLE001 — PortAudio can raise on odd hosts
+        return []
+    return devices
+
+
+def resolve_device(name_or_index) -> int | None:
+    """Turn a saved device name back into a live index (devices move around)."""
+    if name_or_index is None or name_or_index == "":
+        return None
+    if isinstance(name_or_index, int) or str(name_or_index).isdigit():
+        return int(name_or_index)
+    for dev in list_input_devices():
+        if dev["name"] == name_or_index:
+            return dev["index"]
+    return None
 
 
 def _to_wav(frames, sample_rate: int) -> bytes:

@@ -40,11 +40,68 @@ class VozLabAPI:
             raise ApiError("server", f"{r.status_code}: {r.text[:200]}")
         return r.json()
 
+    def _send(self, method: str, path: str, payload: dict | None = None,
+              timeout: int = 30) -> dict:
+        if not self.base_url:
+            raise ApiError("unreachable", "no server configured")
+        try:
+            r = requests.request(method, f"{self.base_url}{path}", headers=self._headers(),
+                                 json=payload, timeout=timeout)
+        except requests.RequestException as e:
+            raise ApiError("unreachable", str(e)) from e
+        if r.status_code == 401:
+            raise ApiError("bad_token", r.text[:200])
+        if r.status_code == 404:
+            raise ApiError("server", "not found on this server version")
+        if r.status_code == 429:
+            raise ApiError("other", "the server is rate limiting requests, try again shortly")
+        if r.status_code >= 400:
+            detail = r.text[:200]
+            try:
+                detail = r.json().get("detail", detail)
+            except ValueError:
+                pass
+            raise ApiError("server", str(detail))
+        return r.json() if r.content else {}
+
     def health(self) -> dict:
         return self._get("/health")
 
     def version(self) -> dict:
         return self._get("/version")
+
+    # -- server introspection / remote configuration -------------------------
+    def status(self) -> dict:
+        """Everything the app needs for its status panel (authenticated)."""
+        return self._get("/status", timeout=8)
+
+    def get_settings(self) -> dict:
+        return self._get("/settings")
+
+    def patch_settings(self, changes: dict) -> dict:
+        return self._send("PATCH", "/settings", changes)
+
+    def models(self) -> dict:
+        return self._get("/models", timeout=15)
+
+    def preload_model(self, cleanup_model: str | None = None) -> dict:
+        payload = {"cleanup_model": cleanup_model} if cleanup_model else {}
+        return self._send("POST", "/models/preload", payload, timeout=900)
+
+    def self_test(self) -> dict:
+        return self._send("POST", "/self-test", None, timeout=300)
+
+    def logs(self, lines: int = 100) -> list[str]:
+        return self._get(f"/logs?lines={int(lines)}").get("lines", [])
+
+    def list_tokens(self) -> list[dict]:
+        return self._get("/tokens").get("tokens", [])
+
+    def create_token(self, name: str) -> dict:
+        return self._send("POST", "/tokens", {"name": name})
+
+    def revoke_token(self, token_id: str) -> dict:
+        return self._send("DELETE", f"/tokens/{token_id}")
 
     def transcribe(self, wav_bytes: bytes, cleanup: bool = True, language: str = "auto") -> dict:
         if not self.base_url:

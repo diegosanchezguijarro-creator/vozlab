@@ -25,6 +25,14 @@ services:
       - VOZLAB_CLEANUP_MODEL=${VOZLAB_CLEANUP_MODEL:-qwen2.5:7b-instruct}
     depends_on:
       - ollama
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
   ollama:
     image: ollama/ollama:latest

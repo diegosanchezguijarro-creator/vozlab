@@ -1,201 +1,46 @@
-"""Tiny i18n layer (English / Spanish). Follows Windows locale by default."""
+"""Small i18n layer. Translations live in `vozlab/locales/<lang>.json`.
 
+Adding a language = copy `en.json`, translate the values, open a pull request
+(see CONTRIBUTING). Keys missing from a translation fall back to English.
+"""
+
+import json
 import locale
+import os
 
-STRINGS = {
-    "en": {
-        "app_name": "VozLab",
-        "tray_tooltip": "VozLab — hold {key} and speak",
-        "menu_dictate": "Dictate (toggle)",
-        "menu_settings": "Settings…",
-        "menu_calibrate": "Change dictation key…",
-        "menu_folder": "Open settings folder",
-        "menu_about": "About VozLab",
-        "about_tagline": "Private voice dictation that runs entirely on your own hardware.",
-        "about_close": "Close",
-        "menu_quit": "Quit",
-        "state_listening": "Listening…",
-        "state_transcribing": "Transcribing…",
-        "state_done": "Done",
-        "state_error": "Error",
-        "state_offline": "Server offline",
-        "group_connection": "Connection",
-        "group_connection_hint": "Point VozLab at your own server — the machine running Whisper and the local AI.",
-        "group_dictation": "Dictation",
-        "group_ai": "Local AI formatting",
-        "group_ai_hint": "Adds punctuation and removes filler words on your server. Nothing leaves your network.",
-        "group_appearance": "Appearance",
-        "group_system": "System",
-        "status_unknown": "Checking connection…",
-        "status_connected": "Connected · {model} on {device}",
-        "settings_auto_stop_hint": "Press once, speak, and the recording stops by itself.",
-        "settings_pill_position": "Pill position",
-        "position_bottom_center": "Bottom center",
-        "position_bottom_right": "Bottom right",
-        "position_top_right": "Top right",
-        "wizard_welcome_title": "Welcome to VozLab",
-        "wizard_hotkey_title": "Choose your dictation key",
-        "wizard_mic_title": "Test your microphone",
-        "wizard_mic_hint": "Read a sentence out loud so we can check the whole chain: microphone → server → text.",
-        "wizard_token_where": "Where's the token? It is printed in the server log on first start (docker logs vozlab) and by server/install.sh.",
-        "wizard_hotkey_captured_hint": "You can change this any time from the tray menu.",
-        "wizard_title": "VozLab setup",
-        "wizard_welcome": "Welcome! Three quick steps and you're ready to dictate.",
-        "wizard_server_hint": "Server URL (your VozLab server, e.g. http://192.168.0.23:8092)",
-        "wizard_token_hint": "Access token (printed by the server on first start)",
-        "wizard_test": "Test connection",
-        "wizard_test_ok": "Connected! Model: {model} on {device}",
-        "wizard_test_fail": "Could not connect: {error}",
-        "wizard_hotkey_hint": "Press the key you want to use for dictation (e.g. right Ctrl).",
-        "wizard_hotkey_captured": "Key captured: {name}",
-        "wizard_mic_test": "Record 3 seconds and transcribe",
-        "wizard_mic_working": "Recording 3 seconds…",
-        "wizard_mic_result": "Heard: {text}",
-        "wizard_next": "Next",
-        "wizard_back": "Back",
-        "wizard_finish": "Finish",
-        "wizard_press_key": "Press a key…",
-        "settings_title": "VozLab settings",
-        "settings_server": "Server URL",
-        "settings_token": "Token",
-        "settings_hotkey": "Dictation key",
-        "settings_hotkey_change": "Change…",
-        "settings_mode": "Dictation mode",
-        "settings_mode_hold": "Hold to talk",
-        "settings_mode_toggle": "Press to start / stop",
-        "settings_auto_stop": "Stop automatically when I stop speaking",
-        "settings_cleanup": "Format text with the local AI (remove filler words, punctuation)",
-        "settings_language": "Dictation language",
-        "settings_language_auto": "Detect automatically",
-        "settings_ui_language": "Interface language",
-        "settings_beeps": "Sound feedback",
-        "settings_beeps_hint": "Short beeps when a recording starts and stops.",
-        "settings_clipboard": "Restore clipboard after pasting",
-        "settings_pill": "Show floating status pill",
-        "settings_startup": "Start with Windows",
-        "settings_debug": "Debug logging",
-        "settings_check_updates": "Check for updates automatically",
-        "settings_check_updates_hint": "Off by default. When on, VozLab asks GitHub for the latest version — the only request that leaves your network.",
-        "settings_check_now": "Check now",
-        "settings_update_now": "Update now",
-        "settings_diagnostics": "Export diagnostics",
-        "settings_diagnostics_done": "Saved {file} (no token, no dictated text) — attach it to your report.",
-        "settings_report_issue": "Report a problem",
-        "settings_help": "Documentation",
-        "menu_docs": "Documentation",
-        "update_available": "Update available: v{version}. Use Settings → System → Update now.",
-        "update_up_to_date": "You're up to date (v{version}).",
-        "update_check_failed": "Could not check for updates: {error}",
-        "err_server_version": "Your server runs v{server} but this app is v{client} — update the server (docker compose pull && docker compose up -d).",
-        "settings_save": "Save",
-        "settings_cancel": "Cancel",
-        "settings_saved": "Settings saved",
-        "settings_test": "Test connection",
-        "err_server_unreachable": "Cannot reach the server — is it running and on the same network?",
-        "err_bad_token": "The token was rejected. Copy the token from the server logs.",
-        "err_empty_transcript": "Nothing was recognized — check your microphone.",
-        "err_mic": "Could not open the microphone: {error}",
-        "err_too_short": "Recording too short — ignored",
-        "err_generic": "Error: {error}",
-        "paste_done": "Text pasted",
-    },
-    "es": {
-        "app_name": "VozLab",
-        "tray_tooltip": "VozLab — mantén {key} y habla",
-        "menu_dictate": "Dictar (alternar)",
-        "menu_settings": "Ajustes…",
-        "menu_calibrate": "Cambiar tecla de dictado…",
-        "menu_folder": "Abrir carpeta de ajustes",
-        "menu_about": "Acerca de VozLab",
-        "about_tagline": "Dictado por voz privado que funciona enteramente en tu propio hardware.",
-        "about_close": "Cerrar",
-        "menu_quit": "Salir",
-        "state_listening": "Escuchando…",
-        "state_transcribing": "Transcribiendo…",
-        "state_done": "Listo",
-        "state_error": "Error",
-        "state_offline": "Servidor desconectado",
-        "group_connection": "Conexión",
-        "group_connection_hint": "Apunta VozLab a tu propio servidor: la máquina que ejecuta Whisper y la IA local.",
-        "group_dictation": "Dictado",
-        "group_ai": "Formato con IA local",
-        "group_ai_hint": "Añade puntuación y quita muletillas en tu servidor. Nada sale de tu red.",
-        "group_appearance": "Apariencia",
-        "group_system": "Sistema",
-        "status_unknown": "Comprobando conexión…",
-        "status_connected": "Conectado · {model} en {device}",
-        "settings_auto_stop_hint": "Pulsa una vez, habla, y la grabación se detiene sola.",
-        "settings_pill_position": "Posición de la píldora",
-        "position_bottom_center": "Abajo centro",
-        "position_bottom_right": "Abajo derecha",
-        "position_top_right": "Arriba derecha",
-        "wizard_welcome_title": "Bienvenido a VozLab",
-        "wizard_hotkey_title": "Elige tu tecla de dictado",
-        "wizard_mic_title": "Prueba el micrófono",
-        "wizard_mic_hint": "Lee una frase en voz alta para comprobar toda la cadena: micrófono → servidor → texto.",
-        "wizard_token_where": "¿Dónde está el token? El servidor lo muestra al arrancar por primera vez (docker logs vozlab) y también server/install.sh.",
-        "wizard_hotkey_captured_hint": "Puedes cambiarla cuando quieras desde el menú de la bandeja.",
-        "wizard_title": "Configuración de VozLab",
-        "wizard_welcome": "¡Bienvenido! Tres pasos rápidos y ya puedes dictar.",
-        "wizard_server_hint": "URL del servidor (tu servidor VozLab, p. ej. http://192.168.0.23:8092)",
-        "wizard_token_hint": "Token de acceso (el servidor lo muestra al arrancar)",
-        "wizard_test": "Probar conexión",
-        "wizard_test_ok": "¡Conectado! Modelo: {model} en {device}",
-        "wizard_test_fail": "No se pudo conectar: {error}",
-        "wizard_hotkey_hint": "Pulsa la tecla que quieras usar para dictar (p. ej. Ctrl derecho).",
-        "wizard_hotkey_captured": "Tecla capturada: {name}",
-        "wizard_mic_test": "Grabar 3 segundos y transcribir",
-        "wizard_mic_working": "Grabando 3 segundos…",
-        "wizard_mic_result": "Se escuchó: {text}",
-        "wizard_next": "Siguiente",
-        "wizard_back": "Atrás",
-        "wizard_finish": "Terminar",
-        "wizard_press_key": "Pulsa una tecla…",
-        "settings_title": "Ajustes de VozLab",
-        "settings_server": "URL del servidor",
-        "settings_token": "Token",
-        "settings_hotkey": "Tecla de dictado",
-        "settings_hotkey_change": "Cambiar…",
-        "settings_mode": "Modo de dictado",
-        "settings_mode_hold": "Mantener pulsado",
-        "settings_mode_toggle": "Pulsar para empezar / parar",
-        "settings_auto_stop": "Parar solo cuando dejo de hablar",
-        "settings_cleanup": "Formatear el texto con la IA local (quitar muletillas, puntuación)",
-        "settings_language": "Idioma del dictado",
-        "settings_language_auto": "Detectar automáticamente",
-        "settings_ui_language": "Idioma de la interfaz",
-        "settings_beeps": "Sonidos de aviso",
-        "settings_beeps_hint": "Pitidos cortos al empezar y terminar de grabar.",
-        "settings_clipboard": "Restaurar el portapapeles tras pegar",
-        "settings_pill": "Mostrar la píldora de estado flotante",
-        "settings_startup": "Iniciar con Windows",
-        "settings_debug": "Registro de depuración",
-        "settings_check_updates": "Buscar actualizaciones automáticamente",
-        "settings_check_updates_hint": "Desactivado por defecto. Si lo activas, VozLab pregunta a GitHub por la última versión: la única petición que sale de tu red.",
-        "settings_check_now": "Buscar ahora",
-        "settings_update_now": "Actualizar ahora",
-        "settings_diagnostics": "Exportar diagnóstico",
-        "settings_diagnostics_done": "Guardado {file} (sin token ni texto dictado) — adjúntalo a tu informe.",
-        "settings_report_issue": "Informar de un problema",
-        "settings_help": "Documentación",
-        "menu_docs": "Documentación",
-        "update_available": "Actualización disponible: v{version}. Usa Ajustes → Sistema → Actualizar ahora.",
-        "update_up_to_date": "Estás al día (v{version}).",
-        "update_check_failed": "No se pudo buscar actualizaciones: {error}",
-        "err_server_version": "Tu servidor ejecuta v{server} pero esta app es v{client} — actualiza el servidor (docker compose pull && docker compose up -d).",
-        "settings_save": "Guardar",
-        "settings_cancel": "Cancelar",
-        "settings_saved": "Ajustes guardados",
-        "settings_test": "Probar conexión",
-        "err_server_unreachable": "No se alcanza el servidor — ¿está encendido y en la misma red?",
-        "err_bad_token": "El token fue rechazado. Cópialo desde los registros del servidor.",
-        "err_empty_transcript": "No se reconoció nada — revisa el micrófono.",
-        "err_mic": "No se pudo abrir el micrófono: {error}",
-        "err_too_short": "Grabación demasiado corta — ignorada",
-        "err_generic": "Error: {error}",
-        "paste_done": "Texto pegado",
-    },
-}
+LOCALES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "locales")
+FALLBACK = "en"
+
+
+def _load() -> dict:
+    strings: dict[str, dict[str, str]] = {}
+    try:
+        names = sorted(os.listdir(LOCALES_DIR))
+    except OSError:
+        return {FALLBACK: {}}
+    for name in names:
+        if not name.endswith(".json"):
+            continue
+        lang = name[:-5]
+        try:
+            with open(os.path.join(LOCALES_DIR, name), encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                strings[lang] = {k: str(v) for k, v in data.items()}
+        except (OSError, json.JSONDecodeError):
+            continue
+    if FALLBACK not in strings:
+        strings[FALLBACK] = {}
+    return strings
+
+
+STRINGS = _load()
+
+
+def available() -> list[str]:
+    """Language codes that ship with the app (English first)."""
+    codes = sorted(STRINGS)
+    return [FALLBACK] + [c for c in codes if c != FALLBACK]
 
 
 def detect_language() -> str:
@@ -207,18 +52,26 @@ def detect_language() -> str:
     return "es" if str(loc).lower().startswith("es") else "en"
 
 
+def resolve(ui_language: str) -> str:
+    if ui_language in (None, "", "auto"):
+        lang = detect_language()
+    else:
+        lang = str(ui_language).lower()
+    return lang if lang in STRINGS else FALLBACK
+
+
 class Translator:
     def __init__(self, ui_language: str = "auto"):
-        self.language = detect_language() if ui_language in (None, "", "auto") else ui_language
-        if self.language not in STRINGS:
-            self.language = "en"
+        self.language = resolve(ui_language)
 
     def set_language(self, ui_language: str) -> None:
-        self.language = detect_language() if ui_language in (None, "", "auto") else ui_language
-        if self.language not in STRINGS:
-            self.language = "en"
+        self.language = resolve(ui_language)
 
     def __call__(self, key: str, **kwargs) -> str:
-        text = STRINGS.get(self.language, STRINGS["en"]).get(key) \
-            or STRINGS["en"].get(key) or key
-        return text.format(**kwargs) if kwargs else text
+        text = STRINGS.get(self.language, {}).get(key) \
+            or STRINGS[FALLBACK].get(key) or key
+        try:
+            return text.format(**kwargs) if kwargs else text
+        except (KeyError, IndexError, ValueError):
+            # a translation with a broken placeholder must never crash the app
+            return text

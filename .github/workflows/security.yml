@@ -1,0 +1,96 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # weekly, so new advisories surface even without a commit
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check client server
+
+  sast:
+    name: SAST (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install bandit[toml]
+      # -ll = medium and above fail the build (uses [tool.bandit] in pyproject.toml)
+      - run: bandit -q -r client server -ll
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0        # full history: a deleted secret is still leaked
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - name: Audit server dependencies
+        run: pip-audit -r server/requirements.txt
+      - name: Audit client dependencies
+        run: pip-audit -r client/requirements.txt
+
+  pins:
+    name: Pins are consistent
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: The Dockerfile must install exactly server/requirements.txt
+        run: |
+          python - <<'PY'
+          import re
+
+          reqs = {}
+          for line in open("server/requirements.txt"):
+              line = line.split("#")[0].strip()
+              if line:
+                  name, _, version = line.partition("==")
+                  reqs[name.lower()] = version
+
+          dockerfile = open("server/Dockerfile").read()
+          block = dockerfile.split("RUN pip install --no-cache-dir", 1)[1]
+          block = block.split("nvidia-cublas", 1)[0]
+
+          missing, mismatched = [], []
+          for name, version in reqs.items():
+              found = re.search(rf"{re.escape(name)}==([\w.]+)", block)
+              if not found:
+                  missing.append(name)
+              elif found.group(1) != version:
+                  mismatched.append(f"{name}: {found.group(1)} != {version}")
+
+          assert not missing, f"not pinned in the Dockerfile: {missing}"
+          assert not mismatched, f"version drift: {mismatched}"
+          print(f"{len(reqs)} pins match the Dockerfile")
+          PY

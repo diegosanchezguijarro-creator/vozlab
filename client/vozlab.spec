@@ -19,6 +19,8 @@ hiddenimports = [
 # CustomTkinter ships theme JSON files and needs its submodules/deps collected
 datas = collect_data_files("customtkinter")
 datas += [("assets/icon.ico", "assets"), ("assets/icon.png", "assets")]
+# translations are plain JSON next to the package
+datas += [("vozlab/locales", "vozlab/locales")]
 hiddenimports += collect_submodules("customtkinter")
 hiddenimports += collect_submodules("darkdetect")
 

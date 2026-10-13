@@ -5,6 +5,7 @@ and animated at 25 fps. On Windows `-transparentcolor` makes the corners really
 transparent; elsewhere it degrades to a dark rectangle.
 """
 
+import time
 import tkinter as tk
 
 from . import theme
@@ -31,6 +32,7 @@ class PillOverlay:
     def __init__(self, root: tk.Tk, cfg: dict):
         self.root = root
         self.position = cfg.get("pill_position", "bottom-center")
+        self.style = cfg.get("pill_style", "full")       # full | minimal
         self._state = "info"
         self._text = ""
         self._visible = False
@@ -38,8 +40,11 @@ class PillOverlay:
         self._fade_job = None
         self._anim_job = None
         self._hide_job = None
+        self._timer_job = None
+        self._started_at = 0.0
         self._levels = [0.0] * BAR_COUNT
         self._phase = 0
+        self.on_click = None
 
         self.window = tk.Toplevel(root)
         self.window.overrideredirect(True)
@@ -54,14 +59,24 @@ class PillOverlay:
         self.canvas = tk.Canvas(self.window, bg=theme.PILL_TRANSPARENT,
                                 highlightthickness=0, bd=0)
         self.canvas.pack()
+        self.canvas.bind("<Button-1>", lambda _e: self._clicked())
         self.window.withdraw()
 
     # -- public API ----------------------------------------------------------
+    def _clicked(self) -> None:
+        """Clicking the pill copies the last dictation (handy when the paste missed)."""
+        if self.on_click:
+            self.on_click()
+
     def show(self, text: str, state: str = "info", auto_hide_ms: int | None = None) -> None:
         self._cancel(self._hide_job)
         self._hide_job = None
         self._state = state
         self._text = text or ""
+        if state == "listening" and not self._started_at:
+            self._started_at = time.time()
+        elif state != "listening":
+            self._started_at = 0.0
         self._render()
         self._place()
         if not self._visible:
@@ -99,9 +114,20 @@ class PillOverlay:
 
     # -- drawing -------------------------------------------------------------
     def _measure(self) -> tuple[int, int]:
+        if self.style == "minimal":
+            # a dot and the words, nothing else
+            width = 16 + 10 + 14 + len(self._text) * 6.6
+            return int(max(120, min(self.MAX_WIDTH, width))), self.HEIGHT
         width = 22 + 12 + 10 + (BAR_COUNT * 7 + 12) + 14 + len(self._text) * 6.6
         width = int(max(self.MIN_WIDTH, min(self.MAX_WIDTH, width)))
         return width, self.HEIGHT
+
+    def _elapsed_suffix(self) -> str:
+        """Show how long we have been listening (long notes need reassurance)."""
+        if self._state != "listening" or not self._started_at:
+            return ""
+        seconds = int(time.time() - self._started_at)
+        return f"  {seconds}s" if seconds >= 3 else ""
 
     def _render(self) -> None:
         w, h = self._measure()
@@ -114,6 +140,13 @@ class PillOverlay:
         color = theme.STATE_COLORS.get(self._state, theme.ACCENT)
         # status dot
         self.canvas.create_oval(17, h / 2 - 5, 27, h / 2 + 5, fill=color, outline="")
+
+        text = self._text + self._elapsed_suffix()
+
+        if self.style == "minimal":
+            self.canvas.create_text(38, h / 2, text=text, anchor="w",
+                                    fill=theme.TEXT, font=theme.font_tuple(12))
+            return
 
         # level meter / activity indicator
         x = 39
@@ -134,7 +167,7 @@ class PillOverlay:
             self.canvas.create_rectangle(x, h / 2 - 7, x + 4, h / 2 + 7, fill=color, outline="")
 
         text_x = x + max(BAR_COUNT * 7, 30) + 12
-        self.canvas.create_text(text_x, h / 2, text=self._text, anchor="w",
+        self.canvas.create_text(text_x, h / 2, text=text, anchor="w",
                                 fill=theme.TEXT, font=theme.font_tuple(12))
 
     def _start_animation(self) -> None:

@@ -12,7 +12,7 @@ The app makes exactly two kinds of network request:
 
 | Request | When | Destination |
 |---|---|---|
-| `GET /health` and `POST /transcribe` | normal use | **your** server, on your LAN |
+| `GET /health`, `GET /status`, `POST /transcribe` | normal use | **your** server, on your LAN |
 | `GET /releases/latest` | only if you enable *Settings → System → Check for updates*, or press *Check now* | `api.github.com` (public version number) |
 
 The second one is **off by default**. With it off, the only packets VozLab sends
@@ -25,34 +25,78 @@ download a release you asked for.
 
 | Where | What | Why |
 |---|---|---|
-| `server/data/config.json` | token, model settings | server configuration (mode 600, git-ignored) |
+| `server/data/config.json` | admin token **hash-free** (mode 600), device-token hashes, model settings | server configuration (git-ignored) |
 | `server/data/hf/` | Whisper model weights | so startup doesn't re-download ~500 MB |
 | `server/data/` + `ollama_data/` | LLM model weights (Docker volume) | same |
-| `%APPDATA%\VozLab\config.json` | server URL, token, your preferences | so the app remembers everything |
-| `%APPDATA%\VozLab\vozlab.log` | timestamps, state changes, errors | support/debugging |
+| `%APPDATA%\VozLab\config.json` | server URL, **DPAPI-encrypted token**, your preferences | so the app remembers everything |
+| `%APPDATA%\VozLab\vozlab.log` | timings, state changes, errors | support/debugging (never your words, unless debug is on) |
 
-**Audio is never written to disk.** It lives in memory on the client, and on the
-server the only disk touch is a temporary file inside the container that
-faster-whisper needs to read; it is deleted immediately after transcription. It is
-not a recording — no preview, no history, no retention policy to configure.
+**Audio is never written to disk.** The client keeps it in memory and posts it
+straight to the server; the server decodes the uploaded bytes **in memory** and
+hands them to faster-whisper, so no temporary file is created anywhere. There is
+no recording, no preview, no history, and no retention setting to get wrong.
 
-**Transcripts** reach `vozlab.log` only when *Debug logging* is on (it is off by
-default). Turn it off and clear the file from *Settings → System → Open settings
-folder*. To audit what a shared PC saw, delete that folder; nothing else is kept.
+**Transcripts never reach `vozlab.log` by default.** The log records lengths,
+languages and timings, not what you said. Only with *Debug logging* on (off by
+default) do the words get written, so you can analyse a bad transcription — turn
+it off and clear the file from *Settings → System → Clear log*.
+
+`vozlab.log` also scrubs anything that looks like a credential: the server token,
+`Authorization: Bearer …` headers and `"token": "…"` fields are masked before a
+line is written.
 
 ## Authentication
 
 - Every `/transcribe` request must send `Authorization: Bearer <token>`; anything
-  else gets `401`. The token is generated with `secrets.token_urlsafe(24)` on
-  first boot and printed in the container log.
-- `/health` and `/version` are unauthenticated on purpose: they expose the model
-  name, device and version number, nothing personal, and they make monitoring
-  simple. Bind them to your LAN only.
+  else gets `401`. The admin token is generated with `secrets.token_urlsafe(24)`
+  on first boot and **printed once**, at that moment only — later restarts say
+  "already configured" so the token never accumulates in `docker logs`.
+- Token comparison is constant-time (`secrets.compare_digest`).
+- **Per-device tokens**: *Settings → Server → Connected devices* issues a token
+  for one machine (`POST /tokens`). Only a salted SHA-256 hash is stored on the
+  server, and the value is shown once. Revoke a lost laptop without touching the
+  other machines.
+- `/health` and `/version` are unauthenticated on purpose and deliberately
+  minimal: `{"ok": true, "version": …, "api": …}`. The detailed view (models,
+  device, GPU, uptime, request count) lives behind the token at `/status`. Set
+  `"expose_details": true` in `server/data/config.json` if you *want* the old
+  verbose `/health`. OpenAPI docs (`/docs`) are disabled.
+- Requests are rate-limited per client (`VOZLAB_RATE_LIMIT`, default 120/min).
 - **Keep the server on a trusted LAN.** The API is plain HTTP: anyone who can
-  sniff your network AND has the token could send audio to it. If you need remote
+  sniff your network AND has a token could send audio to it. If you need remote
   access, use a VPN ([docs/REMOTE.md](REMOTE.md)) rather than port-forwarding.
-- Rotating the token: edit `server/data/config.json`, restart the container, and
-  update each client (Settings → Connection → token).
+- Rotating everything: delete the `token` in `server/data/config.json` and restart
+  the container (a new one is generated), then update each client. To rotate a
+  single device instead, revoke it in the app.
+
+## Hardening you get by default
+
+The server container runs as an unprivileged user (uid 1000) with a **read-only
+root filesystem**, `no-new-privileges`, and **all Linux capabilities dropped**:
+
+```yaml
+user: "1000:1000"
+read_only: true
+tmpfs: [/tmp]
+security_opt: [no-new-privileges:true]
+cap_drop: [ALL]
+```
+
+The base image is pinned by digest (`python:3.12-slim@sha256:…`) and every Python
+dependency is pinned to an exact version, so a rebuild cannot silently pull
+something different. CI enforces this:
+
+| Check | Tool |
+|---|---|
+| Bugs / dead code | `ruff` (this caught real `except … as e` scope bugs) |
+| Static analysis | `bandit` (medium and above fail the build) |
+| Secrets in history | `gitleaks` |
+| Known CVEs in dependencies | `pip-audit` |
+| Dockerfile ↔ requirements drift | a CI job that parses both |
+| Leaks and thread growth over time | soak tests in `client/tests/test_soak.py` |
+
+Every release also publishes an **SBOM** (`vozlab-server-<version>.spdx.json`)
+alongside the binaries.
 
 ## Threat model (what VozLab does and does not protect against)
 
@@ -60,11 +104,14 @@ folder*. To audit what a shared PC saw, delete that folder; nothing else is kept
 |---|---|
 | Cloud provider reading your dictations | ✅ impossible — there is no cloud |
 | A friend on your Wi-Fi seeing your audio | ⚠️ partially — audio is unencrypted on the LAN; use a VPN or trusted network |
-| Someone with your laptop reading the token | ❌ not yet — the token is stored in plain text (`DPAPI` storage is on the roadmap) |
-| Someone opening your server's port from the internet | ⚠️ they still need the token, but do not expose it; use a VPN |
+| Someone with your laptop reading the token | ✅ the token is encrypted with Windows DPAPI, tied to your user account, and stored as `token_enc` (a copied config file is useless) |
+| Someone opening your server's port from the internet | ⚠️ they still need a token, but do not expose it; use a VPN |
+| A stolen laptop | ✅ revoke that device's token from any other client; the others keep working |
+| The server being compromised through the app | ✅ the container is non-root, read-only and capability-free |
 | An LLM "helpfully" rewriting your text | ✅ the guard rejects rewrites that invent words, falling back to the raw transcript |
 | Malicious model in Ollama | ⚠️ model weights run as data, but Ollama is a separate process you control; pin models you trust |
-| Supply chain (pip/Docker) | ⚠️ dependencies are version-pinned and scanned in CI (`pip-audit`, secret scanning); SBOM is on the roadmap |
+| Supply chain (pip/Docker) | ✅ pinned by exact version, base image by digest; `pip-audit`, `bandit`, `gitleaks`, Dependabot and an SBOM per release |
+| Plain HTTP on the LAN | ❌ not covered — TLS is not built in yet; use a VPN ([REMOTE.md](REMOTE.md)) |
 
 ## Verifying the claims
 
@@ -73,9 +120,12 @@ folder*. To audit what a shared PC saw, delete that folder; nothing else is kept
 2. **Confirm no audio on disk**: `docker exec vozlab ls -la /tmp` after a few
    dictations — nothing accumulates.
 3. **Check the log contents**: `%APPDATA%\VozLab\vozlab.log` with debug off
-   contains state changes and errors, not your sentences.
-4. **Read the code**: the whole client is ~1500 lines of Python in
-   [`client/vozlab`](../client/vozlab), and the server is two files in
+   contains timings and errors, not your sentences:
+   `Select-String -Path "$env:APPDATA\VozLab\vozlab.log" -Pattern "dictation"`.
+4. **Check the token is encrypted**: `%APPDATA%\VozLab\config.json` has no
+   `token` field, only `token_enc`.
+5. **Read the code**: the whole client is ~1500 lines of Python in
+   [`client/vozlab`](../client/vozlab), and the server is a few files in
    [`server`](../server).
 
 ## Reporting a vulnerability

@@ -1,0 +1,9 @@
+# Runtime dependencies — kept in lock-step with the Dockerfile (CI checks that).
+# Versions are audited with pip-audit in .github/workflows/security.yml.
+fastapi==0.143.0
+starlette==1.7.0
+uvicorn==0.54.0
+httpx==0.28.1
+requests==2.34.2
+faster-whisper==1.1.1
+av==13.1.0

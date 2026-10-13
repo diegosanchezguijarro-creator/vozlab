@@ -271,9 +271,9 @@ survive updates.
 |---|---|
 | Nothing happens when I hold the key | Tray → **Change dictation key…** and press it again. Exclusive full-screen games swallow global keys — try tray → *Dictate (toggle)*. |
 | "Cannot reach the server" | Check `docker ps` on the server and that you're on the same network. `curl http://<server>:8092/health` from the laptop should return JSON. |
-| "The token was rejected" | Copy the token exactly from `docker logs vozlab` (it's printed at every startup). |
+| "The token was rejected" | On the server: `cat server/data/config.json` (or re-run `server/install.sh`) — the token is shown once at first start. |
 | Nothing is transcribed | Windows → *Settings → Privacy → Microphone* → allow desktop apps. Speak for at least half a second. |
-| The text isn't what I said | Tray → *Open settings folder* → `vozlab.log` shows `raw=…` (what Whisper heard) and the final text, so you can tell whether it's audio quality or the AI pass. |
+| The text isn't what I said | Settings → **System** → *Debug logging*, dictate again, then *Show log*: the debug lines carry `raw=…` (what Whisper heard) and the final text. The log never contains your words unless debugging is on. |
 | It's slow | Server on CPU? Set `whisper_model: small.en` and `cleanup_model: qwen2.5:3b-instruct`, or add a GPU. |
 
 More: **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — and

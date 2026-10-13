@@ -14,7 +14,6 @@ On a headless box run it under a virtual display:
 
 import os
 import sys
-import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -78,6 +77,16 @@ def screenshot(name: str, prefix: str = "") -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     rc = os.system(f"import -window root '{path}' 2>/dev/null")
     print(f"  {'saved' if rc == 0 else 'FAILED'} {path}")
+    return rc
+
+
+def sync(root) -> None:
+    """Flush pending redraws so a screenshot captures the current frame."""
+    try:
+        root.update_idletasks()
+        root.update()
+    except Exception:
+        pass
 
 
 def main() -> None:
@@ -93,14 +102,31 @@ def main() -> None:
     print(f"Rendering VozLab UI (language: {app.tr.language})")
     shot = lambda name: screenshot(name, prefix) if take_shots else None
 
-    # 1. settings window
+    # 1. settings window — one screenshot per tab
     app.settings_window = settings_window.SettingsWindow(app)
-    app.settings_window._set_status(True, app.tr("status_connected", model="small", device="cuda"))
-    app.settings_window.test_label.configure(
+    settings = app.settings_window
+    settings._set_status(True, app.tr("status_connected", model="small", device="cuda"))
+    settings.test_label.configure(
         text=app.tr("wizard_test_ok", model="small", device="cuda"), text_color=theme.OK)
+
+    tabs = [app.tr(k) for k in ("tab_dictation", "tab_audio", "tab_formatting",
+                                "tab_server", "tab_appearance", "tab_system")]
+    names = ["settings-dictation", "settings-audio", "settings-formatting",
+             "settings-server", "settings-appearance", "settings-system"]
+
     if take_shots:
-        app.root.after(900, lambda: shot("settings"))
-    app.root.after(2200, app.settings_window.win.destroy)
+        delay = 900
+        for tab, name in zip(tabs, names):
+            def pick(t=tab, n=name, d=delay):
+                settings.tabs.set(t)
+                settings.win.lift()
+                sync(app.root)
+                shot(n)
+            app.root.after(delay, pick)
+            delay += 900
+        app.root.after(delay + 600, settings.win.destroy)
+    else:
+        app.root.after(2200, settings.win.destroy)
 
     # 2. wizard (all three steps)
     def wizard_steps():
@@ -141,10 +167,10 @@ def main() -> None:
             app.root.after(3000, lambda: shot("pill-done"))
         app.root.after(3600, p.destroy)
 
-    app.root.after(2400, wizard_steps)
-    app.root.after(7000, about_window)
-    app.root.after(9000, pills)
-    app.root.after(13200, app.root.quit)
+    app.root.after(9000, wizard_steps)
+    app.root.after(13600, about_window)
+    app.root.after(15600, pills)
+    app.root.after(19800, app.root.quit)
     app.root.mainloop()
     print("done")
 

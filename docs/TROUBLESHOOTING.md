@@ -32,7 +32,7 @@ python -c "import keyboard; keyboard.hook(lambda e: print(e.name, e.scan_code, e
 
 ## "The token was rejected" (401)
 
-Copy the token exactly as printed by `install.sh` / `docker logs vozlab`.
+Copy the token exactly as printed by `install.sh`, or read it from `server/data/config.json` on the server.
 Rotating the token server-side requires updating every client.
 
 ## Nothing is transcribed (empty result)

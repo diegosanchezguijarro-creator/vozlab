@@ -121,7 +121,7 @@ RTX 4060, **~5–12 s** solo con CPU. Tablas completas en
 |---|---|
 | No pasa nada al mantener la tecla | Bandeja → **Cambiar tecla de dictado** y púlsala de nuevo |
 | "No se alcanza el servidor" | Comprueba `docker ps` y que estés en la misma red |
-| "El token fue rechazado" | Cópialo de `docker logs vozlab` (se imprime al arrancar) |
+| "El token fue rechazado" | En el servidor: `cat server/data/config.json` (o vuelve a ejecutar `server/install.sh`); el token se muestra una vez en el primer arranque |
 | No transcribe nada | *Configuración → Privacidad → Micrófono*: permite apps de escritorio |
 | El texto no es lo que dije | Ajustes → **Exportar diagnóstico**, y mira `raw=…` en `vozlab.log` |
 

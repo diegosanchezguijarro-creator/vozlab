@@ -50,7 +50,7 @@ def tail_log(path: str, max_lines: int = MAX_LOG_LINES) -> list[str]:
 
 
 def build_report(cfg: dict, log_path: str = "", server_health: dict | None = None,
-                 extra: dict | None = None) -> str:
+                 extra: dict | None = None, server_status: dict | None = None) -> str:
     """A plain-text report with versions, environment, settings and logs."""
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     lines = [
@@ -66,12 +66,21 @@ def build_report(cfg: dict, log_path: str = "", server_health: dict | None = Non
         for key, value in extra.items():
             lines.append(f"{key:<15}: {value}")
 
+    server_health = server_status or server_health
     lines += ["", "-- server (from the app's last check) --"]
     if server_health:
         for key in ("version", "api", "whisper_model", "language", "cleanup",
-                    "cleanup_model", "device"):
+                    "cleanup_model", "device", "uptime_s", "requests"):
             if key in server_health:
                 lines.append(f"{key:<15}: {server_health[key]}")
+        gpu = server_health.get("gpu") or {}
+        if gpu:
+            lines.append(f"{'gpu':<15}: {gpu.get('name')} "
+                         f"({gpu.get('memory_used_mb')}/{gpu.get('memory_total_mb')} MB)")
+        auth = server_health.get("auth") or {}
+        if auth:
+            lines.append(f"{'auth':<15}: {auth.get('role')}"
+                         + (f" ({auth['device']})" if auth.get("device") else ""))
     else:
         lines.append("not reachable at the time of this report")
 
@@ -91,13 +100,14 @@ def build_report(cfg: dict, log_path: str = "", server_health: dict | None = Non
 
 
 def write_report(directory: str, cfg: dict, log_path: str = "",
-                 server_health: dict | None = None, extra: dict | None = None) -> str:
+                 server_health: dict | None = None, extra: dict | None = None,
+                 server_status: dict | None = None) -> str:
     """Write the report into `directory`; returns the path."""
     os.makedirs(directory, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     path = os.path.join(directory, f"vozlab-diagnostics-{stamp}.txt")
     with open(path, "w", encoding="utf-8") as f:
-        f.write(build_report(cfg, log_path, server_health, extra))
+        f.write(build_report(cfg, log_path, server_health, extra, server_status))
     return path
 
 

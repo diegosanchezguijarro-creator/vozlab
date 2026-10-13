@@ -58,10 +58,11 @@ class VozLabApp:
         self.cfg = cfgmod.load()
         self.tr = i18n.Translator(self.cfg.get("ui_language", "auto"))
 
-        theme.setup()
+        theme.setup(self.cfg.get("theme", "dark"))
         self.root = ctk.CTk()
         self.root.withdraw()
         self._ui_queue: queue.Queue = queue.Queue()
+        log.set_secrets([self.cfg.get("token")])
 
         self.state = "idle"
         self.recorder: audio.Recorder | None = None
@@ -69,10 +70,13 @@ class VozLabApp:
         self._last_level_post = 0.0
 
         self.overlay = pill_ui.PillOverlay(self.root, self.cfg) if self.cfg.get("show_pill") else None
+        if self.overlay:
+            self.overlay.on_click = lambda: self.post(self.copy_last_text)
 
         self.hotkeys = hotkeys.HotkeyManager(
             on_down=self._hotkey_down,
             on_up=self._hotkey_up,
+            on_escape=self._escape_pressed,
             debug_log=self._log if self.cfg.get("debug") else None,
         )
         self.hotkeys.set_hotkey(self.cfg.get("hotkey"))
@@ -85,6 +89,8 @@ class VozLabApp:
             on_folder=lambda: self.post(self.open_config_folder),
             on_docs=lambda: self.post(self.open_docs),
             on_about=lambda: self.post(self.open_about),
+            on_copy_last=lambda: self.post(self.copy_last_text),
+            on_toggle_pause=lambda: self.post(self.toggle_pause),
             on_quit=lambda: self.post(self.quit_app),
         )
         self.settings_window = None
@@ -92,6 +98,8 @@ class VozLabApp:
         self.last_update_message = ""
         self.last_update_url = ""
         self.last_server_health = None
+        self.last_text = ""
+        self._pause_until = 0.0
 
     # -- thread marshalling --------------------------------------------------
     def post(self, fn) -> None:
@@ -135,8 +143,9 @@ class VozLabApp:
             try:
                 health = self.api.health()
                 self.post(lambda: self._server_ok(health))
-            except ApiError as e:
-                self.post(lambda: self._server_fail(e))
+            except ApiError as err:
+                # bind as a default arg: `e` is deleted when the except block ends
+                self.post(lambda err=err: self._server_fail(err))
         threading.Thread(target=run, daemon=True).start()
 
     def _server_ok(self, health: dict) -> None:
@@ -160,11 +169,11 @@ class VozLabApp:
         def run():
             try:
                 release = updater.check()
-            except updater.UpdateError as e:
-                log.log(f"update check failed: {e}")
+            except updater.UpdateError as err:
+                log.log(f"update check failed: {err}")
                 if manual:
-                    self.post(lambda: self._report_update(
-                        self.tr("update_check_failed", error=e)))
+                    self.post(lambda err=err: self._report_update(
+                        self.tr("update_check_failed", error=err)))
                 return
             if release:
                 log.log(f"update available: {release['version']} (you have {VERSION})")
@@ -221,7 +230,7 @@ class VozLabApp:
             self._stop_and_transcribe()
 
     def _hotkey_down(self) -> None:
-        if self.state == "transcribing":
+        if self.state == "transcribing" or self.paused:
             return
         if self.cfg.get("hotkey_mode") == "toggle":
             self.post(self.toggle_dictation)
@@ -231,6 +240,54 @@ class VozLabApp:
     def _hotkey_up(self) -> None:
         if self.cfg.get("hotkey_mode") != "toggle" and self.state == "listening":
             self.post(self._stop_and_transcribe)
+
+    def _escape_pressed(self) -> None:
+        """Esc while recording throws the recording away (nothing is sent)."""
+        if self.state == "listening":
+            self.post(self._cancel_recording)
+
+    def _cancel_recording(self) -> None:
+        if self.state != "listening" or not self.recorder:
+            return
+        self.recorder.cancel()
+        self.recorder = None
+        self.state = "idle"
+        self.tray.set_state("idle")
+        if self.overlay:
+            self.overlay.show(self.tr("state_cancelled"), "info", auto_hide_ms=1200)
+
+    def copy_last_text(self) -> None:
+        """Copy the previous dictation again (tray menu / pill click)."""
+        if not self.last_text:
+            return
+        try:
+            pyperclip.copy(self.last_text)
+        except Exception as e:  # noqa: BLE001
+            log.log(f"could not copy the last dictation: {e}")
+            return
+        if self.overlay:
+            self.overlay.show(self.tr("copied"), "done", auto_hide_ms=1200)
+
+    def toggle_pause(self) -> None:
+        """Pause/resume dictation (tray menu). Handy during calls or meetings."""
+        self._pause_until = 0.0 if self._pause_until else time.time() + 30 * 60
+        paused = bool(self._pause_until)
+        self.tray.set_paused(paused, self.tr("tray_paused") if paused
+                             else self.tr("tray_tooltip",
+                                          key=hotkeys.describe_hotkey(self.cfg.get("hotkey"))))
+        if paused:
+            log.log("dictation paused for 30 minutes")
+            if self.overlay:
+                self.overlay.show(self.tr("paused_until", minutes=30), "info",
+                                  auto_hide_ms=2500)
+            if self.state == "listening":
+                self._cancel_recording()
+        else:
+            log.log("dictation resumed")
+
+    @property
+    def paused(self) -> bool:
+        return bool(self._pause_until) and time.time() < self._pause_until
 
     def _start_recording(self) -> None:
         if self.state != "idle":
@@ -242,6 +299,7 @@ class VozLabApp:
             auto_stop=self.cfg.get("auto_stop", False),
             on_auto_stop=lambda: self.post(self._stop_and_transcribe),
             on_level=self._on_level,
+            device=audio.resolve_device(self.cfg.get("input_device")),
         )
         try:
             self.recorder.start()
@@ -300,8 +358,8 @@ class VozLabApp:
                 cleanup=self.cfg.get("cleanup", True),
                 language=self.cfg.get("language", "auto"),
             )
-        except ApiError as e:
-            self.post(lambda: self._transcribe_failed(e))
+        except ApiError as err:
+            self.post(lambda err=err: self._transcribe_failed(err))
             return
         text = (out.get("text") or "").strip()
         elapsed = time.time() - t0
@@ -323,8 +381,14 @@ class VozLabApp:
         if out.get("cleanup_rejected"):
             log.log(f"server rejected the AI formatting ({out['cleanup_rejected']}); "
                     f"kept the raw transcript")
+        # Privacy: the words you dictate are never written to disk. Only the
+        # debug log (opt-in, in Settings → System) records them, and the log is
+        # what you would hand over for support.
         log.debug(f"transcribed in {elapsed:.2f}s raw={raw!r} final={text!r}")
-        log.log(f"dictation ({elapsed:.2f}s): {text}")
+        log.log(f"dictation done ({elapsed:.2f}s, {len(text)} chars, "
+                f"{out.get('language') or '?'}"
+                + (", formatted" if out.get("cleanup_used") else ", raw") + ")")
+        self.last_text = text
         self._paste_text(text)
         if self.overlay:
             preview = text if len(text) <= 120 else text[:117] + "…"
@@ -409,6 +473,7 @@ class VozLabApp:
     def apply_config(self, cfg: dict) -> None:
         self.cfg = cfg
         cfgmod.save(cfg)
+        log.set_secrets([cfg.get("token")])
         self.tr.set_language(cfg.get("ui_language", "auto"))
         self.api = VozLabAPI(cfgmod.server_url(cfg), cfg.get("token", ""))
         self.hotkeys.set_hotkey(cfg.get("hotkey"))
@@ -418,6 +483,14 @@ class VozLabApp:
         except Exception as e:  # noqa: BLE001
             log.log(f"autostart update failed: {e}")
 
+        # the pill is painted with raw canvas colors: rebuild it on a theme change
+        theme_before = theme.current()
+        theme.apply(cfg.get("theme", "dark"))
+        if theme.current() != theme_before and self.overlay is not None:
+            self.overlay.destroy()
+            self.overlay = None
+        self.root.configure(fg_color=theme.BG)
+
         if cfg.get("show_pill") and self.overlay is None:
             self.overlay = pill_ui.PillOverlay(self.root, cfg)
         elif not cfg.get("show_pill") and self.overlay is not None:
@@ -425,6 +498,7 @@ class VozLabApp:
             self.overlay = None
         if self.overlay:
             self.overlay.position = cfg.get("pill_position", "bottom-center")
+            self.overlay.style = cfg.get("pill_style", "full")
 
         self.tray.set_state(self.state)
         log.log(f"config saved to {cfgmod.config_path()}")
