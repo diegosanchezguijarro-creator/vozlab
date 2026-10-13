@@ -287,6 +287,54 @@ def test_recorder_duration_and_max_seconds():
     assert fired, "max length must auto-stop"
 
 
+def test_duration_survives_stop():
+    """Regression: the app asks for duration AFTER stop(), which clears the
+    frame buffer — so every recording used to look 0s long and was rejected
+    with 'recording too short'."""
+    import io
+    import wave
+
+    from vozlab.audio import Recorder
+
+    rec = Recorder(max_seconds=60, auto_stop=False)
+    rec._recording = True
+    rec._callback(_pcm(0.3, 16000), 16000, None, None)   # 1.0s of audio
+    wav = rec.stop()
+
+    assert wav is not None, "audio was captured, stop() must return WAV data"
+    assert rec.duration() == pytest.approx(1.0, abs=0.05), \
+        "duration after stop() must reflect the finished recording"
+    assert rec.duration() >= 0.4, "a 1s recording must pass the min_seconds check"
+
+    # and the WAV itself really contains that audio
+    with wave.open(io.BytesIO(wav)) as w:
+        seconds = w.getnframes() / w.getframerate()
+    assert seconds == pytest.approx(1.0, abs=0.05)
+
+
+def test_stop_twice_is_safe_and_keeps_duration():
+    from vozlab.audio import Recorder
+
+    rec = Recorder(max_seconds=60)
+    rec._recording = True
+    rec._callback(_pcm(0.3, 16000), 16000, None, None)
+    first = rec.stop()
+    second = rec.stop()          # key-up after an auto-stop, for example
+    assert first is not None
+    assert second is None
+    assert rec.duration() == pytest.approx(1.0, abs=0.05)
+
+
+def test_cancel_resets_duration():
+    from vozlab.audio import Recorder
+
+    rec = Recorder(max_seconds=60)
+    rec._recording = True
+    rec._callback(_pcm(0.3, 16000), 16000, None, None)
+    rec.cancel()
+    assert rec.duration() == 0.0
+
+
 # ------------------------------------------------------------- packaging ----
 def test_version_exposed():
     from vozlab import VERSION

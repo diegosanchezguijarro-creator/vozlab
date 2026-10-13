@@ -45,6 +45,7 @@ class Recorder:
         self._speech_seen = False
         self._silence_since = None
         self._auto_stopped = False
+        self._last_duration = 0.0     # duration of the recording that just finished
 
     # -- state ---------------------------------------------------------------
     @property
@@ -52,9 +53,16 @@ class Recorder:
         return self._recording
 
     def duration(self) -> float:
+        """Seconds captured: live while recording, otherwise the last recording.
+
+        NOTE: stop() clears the frame buffer, so the finished recording's length
+        is remembered in _last_duration — callers ask for the duration after
+        stopping (and used to always get 0.0).
+        """
         with self._lock:
-            frames = list(self._frames)
-        return sum(len(f) for f in frames) / (self.sample_rate * BYTES_PER_SAMPLE)
+            if not self._recording:
+                return self._last_duration
+            return sum(len(f) for f in self._frames) / (self.sample_rate * BYTES_PER_SAMPLE)
 
     # -- control -------------------------------------------------------------
     def start(self) -> None:
@@ -63,6 +71,7 @@ class Recorder:
                 return
             self._recording = True
             self._frames = []
+            self._last_duration = 0.0
             self._speech_seen = False
             self._silence_since = None
             self._auto_stopped = False
@@ -102,6 +111,8 @@ class Recorder:
         with self._lock:
             frames = self._frames
             self._frames = []
+            self._last_duration = sum(len(f) for f in frames) / (
+                self.sample_rate * BYTES_PER_SAMPLE)
         if not frames:
             return None
         return _to_wav(frames, self.sample_rate)

@@ -3,6 +3,16 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-10-13
+
+### Fixed
+- **Dictation always failed with "recording too short"**: the recorder cleared its
+  audio buffer before the app asked how long the recording was, so every clip
+  measured 0 s and was discarded. The finished recording's duration is now
+  remembered on stop. (Regression tests added.)
+- CI: bumped `actions/checkout` and `actions/setup-python` to versions that no
+  longer run on the deprecated Node 20 runtime.
+
 ## [1.0.0] — 2026-10-13
 
 First public release.
