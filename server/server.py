@@ -27,7 +27,7 @@ from starlette.concurrency import run_in_threadpool
 
 from cleanup import DEFAULT_CLEANUP_PROMPT, cleanup_ok, strip_decoration
 
-VERSION = "1.0.2"
+VERSION = "1.1.0"
 NAME = "vozlab"
 
 CONFIG_PATH = os.environ.get("VOZLAB_CONFIG", "/data/config.json")

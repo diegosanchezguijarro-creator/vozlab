@@ -5,6 +5,8 @@
 """
 import sys
 
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+
 hiddenimports = [
     "pystray",
     "PIL.Image",
@@ -13,6 +15,12 @@ hiddenimports = [
     "sounddevice",
     "_sounddevice",
 ]
+
+# CustomTkinter ships theme JSON files and needs its submodules/deps collected
+datas = collect_data_files("customtkinter")
+datas += [("assets/icon.ico", "assets"), ("assets/icon.png", "assets")]
+hiddenimports += collect_submodules("customtkinter")
+hiddenimports += collect_submodules("darkdetect")
 
 # tray backends are platform-specific
 if sys.platform.startswith("win"):
@@ -26,10 +34,7 @@ a = Analysis(
     ["run_vozlab.py"],
     pathex=[],
     binaries=[],
-    datas=[
-        ("assets/icon.ico", "assets"),
-        ("assets/icon.png", "assets"),
-    ],
+    datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],

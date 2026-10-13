@@ -5,15 +5,18 @@ import queue
 import sys
 import threading
 import time
-import tkinter as tk
-from tkinter import messagebox
 
+import customtkinter as ctk
 import keyboard
 import pyperclip
 
 from . import APP_NAME, VERSION
-from . import audio, config as cfgmod, hotkeys, i18n, log, overlay, tray
+from . import audio, config as cfgmod, hotkeys, i18n, log, tray
 from .api import ApiError, VozLabAPI
+from .ui import about as about_ui
+from .ui import pill as pill_ui
+from .ui import settings_window, theme
+from .ui import wizard as wizard_ui
 
 AUTOSTART_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 
@@ -54,15 +57,17 @@ class VozLabApp:
         self.cfg = cfgmod.load()
         self.tr = i18n.Translator(self.cfg.get("ui_language", "auto"))
 
-        self.root = tk.Tk()
+        theme.setup()
+        self.root = ctk.CTk()
         self.root.withdraw()
         self._ui_queue: queue.Queue = queue.Queue()
 
         self.state = "idle"
         self.recorder: audio.Recorder | None = None
         self.api = VozLabAPI(cfgmod.server_url(self.cfg), self.cfg.get("token", ""))
+        self._last_level_post = 0.0
 
-        self.overlay = overlay.PillOverlay(self.root, self.cfg) if self.cfg.get("show_pill") else None
+        self.overlay = pill_ui.PillOverlay(self.root, self.cfg) if self.cfg.get("show_pill") else None
 
         self.hotkeys = hotkeys.HotkeyManager(
             on_down=self._hotkey_down,
@@ -167,6 +172,7 @@ class VozLabApp:
             silence_rms=self.cfg.get("silence_rms", 0.012),
             auto_stop=self.cfg.get("auto_stop", False),
             on_auto_stop=lambda: self.post(self._stop_and_transcribe),
+            on_level=self._on_level,
         )
         try:
             self.recorder.start()
@@ -180,6 +186,15 @@ class VozLabApp:
         self.tray.set_state("listening")
         if self.overlay:
             self.overlay.show(self.tr("state_listening"), "listening")
+
+    def _on_level(self, rms: float) -> None:
+        """Feed the pill's meter — called from the audio thread (throttled)."""
+        now = time.time()
+        if now - self._last_level_post < 0.06:
+            return
+        self._last_level_post = now
+        if self.overlay:
+            self.post(lambda: self.overlay.set_level(rms))
 
     def _stop_and_transcribe(self) -> None:
         if self.state != "listening" or not self.recorder:
@@ -280,29 +295,28 @@ class VozLabApp:
 
     # -- windows -------------------------------------------------------------
     def open_settings(self) -> None:
-        from .settings_ui import SettingsWindow
         if self.settings_window is not None and self.settings_window.win.winfo_exists():
             self.settings_window.win.lift()
             return
-        self.settings_window = SettingsWindow(self, on_saved=self.check_server_async)
+        self.settings_window = settings_window.SettingsWindow(self, on_saved=self.check_server_async)
 
     def open_wizard(self) -> None:
-        from .settings_ui import Wizard
         if self.wizard is not None and getattr(self.wizard, "win", None) and self.wizard.win.winfo_exists():
             self.wizard.win.lift()
             return
-        self.wizard = Wizard(self)
+        self.wizard = wizard_ui.Wizard(self)
 
     def open_calibration(self) -> None:
-        from .settings_ui import HotkeyCaptureDialog
-
         def captured(code, name):
             cfg = dict(self.cfg)
             cfg["hotkey"] = code
             self.apply_config(cfg)
             self.tray.set_state(self.state)
+            if self.overlay:
+                self.overlay.show(self.tr("wizard_hotkey_captured", name=name or str(code)),
+                                  "done", auto_hide_ms=2500)
 
-        HotkeyCaptureDialog(self, captured)
+        settings_window.HotkeyCaptureDialog(self, captured)
 
     def open_config_folder(self) -> None:
         path = cfgmod.config_dir()
@@ -315,12 +329,7 @@ class VozLabApp:
             self._notify_error(self.tr("err_generic", error=e))
 
     def open_about(self) -> None:
-        messagebox.showinfo(self.tr("menu_about"),
-                            f"{APP_NAME} {VERSION}\n\n"
-                            f"{self.tr('settings_server')}: {cfgmod.server_url(self.cfg) or '—'}\n"
-                            f"{self.tr('settings_hotkey')}: "
-                            f"{hotkeys.describe_hotkey(self.cfg.get('hotkey'))}\n\n"
-                            "100% local dictation over your LAN.")
+        about_ui.AboutWindow(self)
 
     def apply_config(self, cfg: dict) -> None:
         self.cfg = cfg
@@ -335,7 +344,7 @@ class VozLabApp:
             log.log(f"autostart update failed: {e}")
 
         if cfg.get("show_pill") and self.overlay is None:
-            self.overlay = overlay.PillOverlay(self.root, cfg)
+            self.overlay = pill_ui.PillOverlay(self.root, cfg)
         elif not cfg.get("show_pill") and self.overlay is not None:
             self.overlay.destroy()
             self.overlay = None

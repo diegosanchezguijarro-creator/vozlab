@@ -2,5 +2,5 @@
 
 APP_NAME = "VozLab"
 APP_ID = "vozlab"
-VERSION = "1.0.2"
+VERSION = "1.1.0"
 __all__ = ["APP_NAME", "APP_ID", "VERSION"]

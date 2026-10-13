@@ -2,12 +2,13 @@
 
 ## Automatically (GitHub Actions)
 
-1. Bump `VERSION` in `client/vozlab/__init__.py` and add a `CHANGELOG.md` entry.
+1. Bump `VERSION` in `client/vozlab/__init__.py` **and** `server/server.py`, and add a
+   `CHANGELOG.md` entry.
 2. Commit, then tag and push:
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
 3. The **Release** workflow (`.github/workflows/release.yml`) builds on
@@ -99,19 +100,38 @@ client/
     config.py       settings storage (%APPDATA%\VozLab\config.json)
     i18n.py         English/Spanish strings
     log.py          file logging (works in windowed builds)
-    overlay.py      floating status pill (tkinter)
-    settings_ui.py  settings window + first-run wizard
+    ui/
+      theme.py             design tokens (colors, fonts, spacing)
+      widgets.py           cards, key caps, status dots, labeled fields
+      pill.py              animated floating status pill (raw tk canvas)
+      settings_window.py   settings window
+      wizard.py            first-run wizard
+      about.py             about window
     tray.py         pystray tray icon (icons drawn with Pillow)
   tests/            pytest suite (headless, no audio hardware needed)
+  tools/            make_icon.py, ui_preview.py, install_from_source.ps1
   assets/           icon.ico / icon.png
   vozlab.spec       PyInstaller build definition
 installer/vozlab.iss  Inno Setup script
 server/               Dockerised transcription + cleanup service
 ```
 
+## Previewing the UI without Windows
+
+Every window can be rendered with demo data, headless:
+
+```bash
+# linux/macOS, with a virtual display
+sudo apt-get install -y xvfb imagemagick
+Xvfb :99 -screen 0 1440x900x24 &
+DISPLAY=:99 python tools/ui_preview.py            # English
+DISPLAY=:99 python tools/ui_preview.py --lang es  # Spanish
+DISPLAY=:99 python tools/ui_preview.py --shot     # also write PNGs to docs/images
+```
+
 ## Release checklist
 
-- [ ] `VERSION` bumped in `client/vozlab/__init__.py`
+- [ ] `VERSION` bumped in **both** `client/vozlab/__init__.py` and `server/server.py`
 - [ ] `CHANGELOG.md` updated
 - [ ] CI green on `main`
 - [ ] Tag pushed (`vX.Y.Z`)

@@ -3,6 +3,26 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-10-13
+
+### Added
+- **Complete UI redesign** (CustomTkinter): dark, modern interface throughout
+  - animated status pill with a **live microphone level meter** and pulsing
+    "transcribing" indicator, real rounded corners and fade in/out
+  - settings window rebuilt as grouped cards (Connection, Dictation, Local AI
+    formatting, Appearance, System) with a live connection indicator, toggle
+    switches, segmented controls and a key-cap style hotkey display
+  - first-run wizard with progress dots, step titles and an in-line microphone
+    test that shows the live level while recording
+  - styled About window
+- UI preview tool (`client/tools/ui_preview.py`) to render every window with
+  demo data — works headless (Xvfb) for screenshots and development on Linux
+- Screenshots in `docs/images/` (English + Spanish)
+
+### Changed
+- Requires `customtkinter`; PyInstaller spec collects its theme assets
+- Spanish and English strings for all new UI text
+
 ## [1.0.2] — 2026-10-13
 
 ### Fixed

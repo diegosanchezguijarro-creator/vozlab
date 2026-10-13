@@ -146,13 +146,15 @@ class Recorder:
                 self._fire(self.on_auto_stop)
             return
 
-        if not self.auto_stop:
+        if not self.auto_stop and not self.on_level:
             return
 
         samples = np.frombuffer(chunk, dtype=np.float32)
         rms = float(np.sqrt(np.mean(samples ** 2))) if samples.size else 0.0
         if self.on_level:
-            self.on_level(rms)
+            self.on_level(rms)          # live level meter in the UI
+        if not self.auto_stop:
+            return
 
         now = _now_ms()
         if rms >= self.silence_rms:

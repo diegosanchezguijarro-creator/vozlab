@@ -7,6 +7,28 @@ recognition and text cleanup run on **your own hardware** (a machine with a GPU,
 a NAS, or any Linux box on your network). No cloud, no subscription, no audio
 leaving your LAN.
 
+<p align="center">
+  <img src="docs/images/pill-listening.png" width="320" alt="Listening pill">
+  <br>
+  <em>Hold your key and speak — the pill shows a live mic level.</em>
+</p>
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/settings.png" alt="Settings window"></td>
+<td width="50%"><img src="docs/images/wizard-server.png" alt="Setup wizard"></td>
+</tr>
+<tr>
+<td align="center"><em>Everything in one window</em></td>
+<td align="center"><em>Three-step first-run setup</em></td>
+</tr>
+</table>
+
+<p align="center">
+  <img src="docs/images/pill-transcribing.png" width="300" alt="Transcribing pill">
+  <img src="docs/images/pill-done.png" width="300" alt="Done pill">
+</p>
+
 ```
                  your laptop (Windows)                  your server (any machine on your LAN)
    ┌───────────────────────────────────────┐   ┌────────────────────────────────────────────┐
@@ -23,9 +45,10 @@ leaving your LAN.
 ## Features
 
 - **Push-to-talk or toggle** dictation into any Windows app
+- **Beautiful, dark, native-feeling UI** (CustomTkinter): tray icon, animated
+  status pill with a live microphone level, setup wizard, grouped settings
 - **Automatic text cleanup** — removes "um/uh", fixes punctuation and capitalization, keeps your language
 - **Multilingual** — auto-detects your language; Spanish and 90+ others
-- **Floating status pill** (Wispr-Flow style) + system tray icon
 - **Auto-stop** mode: press once, speak, and it stops when you stop talking
 - **Clipboard-safe**: your clipboard is restored right after pasting
 - **100% local** — nothing is uploaded anywhere
@@ -97,9 +120,9 @@ Typical latency on an RTX 4060: **0.7–2 s** for a sentence, including cleanup.
 
 ```
 server/     Docker-based transcription + cleanup service (FastAPI)
-client/     Windows tray app (Python; built to .exe with PyInstaller)
+client/     Windows tray app (CustomTkinter UI; built to .exe with PyInstaller)
 installer/  Inno Setup script producing VozLab-Setup-x.y.z.exe
-docs/       Setup, build and troubleshooting guides
+docs/       Setup, build and troubleshooting guides (+ UI screenshots)
 .github/    CI (tests on Linux+Windows) and release pipeline
 ```
 
