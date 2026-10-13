@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install test dependencies
-        run: pip install pytest
+        run: pip install pytest pyyaml
       - name: Byte-compile server
         run: python -m compileall -q server/server.py server/cleanup.py
       - name: Cleanup prompt + guard tests
