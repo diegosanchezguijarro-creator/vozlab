@@ -5,4 +5,4 @@ sounddevice>=0.4.6
 numpy>=1.26
 keyboard>=0.13.5
 requests>=2.31
-pyperclip>=1.8.2
+pyperclip>=1.11.0
