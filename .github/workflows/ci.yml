@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PortAudio (Linux only — Windows wheels bundle it)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libportaudio2
+
+      - name: Install dependencies
+        working-directory: client
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Byte-compile all modules
+        working-directory: client
+        run: python -m compileall -q vozlab run_vozlab.py
+
+      - name: Unit tests
+        working-directory: client
+        run: python -m pytest tests -q
+
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Byte-compile server
+        run: python -m compileall -q server/server.py
+      - name: Validate compose files
+        working-directory: server
+        run: |
+          python - <<'EOF'
+          import yaml, sys
+          for f in ("docker-compose.yml", "docker-compose.cpu.yaml"):
+              with open(f) as fh:
+                  data = yaml.safe_load(fh)
+              assert "services" in data, f
+              print(f"{f}: OK")
+          EOF

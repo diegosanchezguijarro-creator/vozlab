@@ -1,0 +1,9 @@
+# CPU-only overlay — use when there is no NVIDIA GPU/driver:
+#   docker compose -f docker-compose.yml -f docker-compose.cpu.yaml up -d
+# Transcription still works, just several times slower.
+services:
+  vozlab:
+    deploy:
+      resources:
+        reservations:
+          devices: []

@@ -1,0 +1,12 @@
+{
+  "token": "generated-automatically-on-first-boot",
+  "whisper_model": "small",
+  "language": "auto",
+  "compute_type": "int8_float16",
+  "beam_size": 5,
+  "cleanup": true,
+  "cleanup_model": "llama3.1:8b",
+  "cleanup_base_url": "http://host.docker.internal:11434",
+  "cleanup_temperature": 0.0,
+  "cleanup_max_tokens": 500
+}

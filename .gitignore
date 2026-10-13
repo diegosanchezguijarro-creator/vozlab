@@ -1,0 +1,27 @@
+# Builds / artifacts
+client/build/
+client/dist/
+installer/output/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Test/tooling caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Server runtime data (model cache, tokens, logs)
+server/data/
+!server/config.example.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

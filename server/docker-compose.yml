@@ -1,0 +1,20 @@
+services:
+  vozlab:
+    build: .
+    image: vozlab-server:latest
+    container_name: vozlab
+    restart: unless-stopped
+    ports:
+      - "8092:8080"
+    volumes:
+      - ./data:/data
+    # Reach ollama (the cleanup LLM) on the host at host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
