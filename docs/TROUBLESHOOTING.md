@@ -65,6 +65,19 @@ Settings → *Show floating status pill*. Position is controlled by
 `pill_position` in `%APPDATA%\VozLab\config.json`
 (`bottom-center`, `bottom-right`, `top-right`).
 
+## The text isn't what I said
+
+- Dictations are logged with both versions — open the log from the tray
+  (**Open settings folder → `vozlab.log`**) and compare `raw=...` (what Whisper
+  heard) with the final text (what the AI formatting produced).
+- If the *raw* text is wrong, it's an audio/accuracy problem: speak closer to the
+  mic, and consider a bigger model (`whisper_model`: `small.en` for English-only
+  is notably more accurate than the multilingual `small`; `medium` is better still).
+- If the raw text is right but the final isn't, the cleanup model rewrote it —
+  the server's guard normally catches this and keeps the raw text
+  (`cleanup_rejected` in the log). Send me that log line if it persists.
+- Turn off *Format text with the local AI* in Settings to check the raw output.
+
 ## Windows blocks the installer
 
 Two different Windows features can do this:

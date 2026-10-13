@@ -235,7 +235,12 @@ class VozLabApp:
         if not text:
             self._notify_error(self.tr("err_empty_transcript"))
             return
-        self._log(f"transcribed in {elapsed:.2f}s: {text!r}")
+        raw = out.get("raw_text") or ""
+        if out.get("cleanup_rejected"):
+            log.log(f"server rejected the AI formatting ({out['cleanup_rejected']}); "
+                    f"kept the raw transcript")
+        log.debug(f"transcribed in {elapsed:.2f}s raw={raw!r} final={text!r}")
+        log.log(f"dictation ({elapsed:.2f}s): {text}")
         self._paste_text(text)
         if self.overlay:
             preview = text if len(text) <= 120 else text[:117] + "…"

@@ -59,6 +59,7 @@ docker logs -f vozlab                     # watch startup, shows the token
 | `compute_type` | `int8_float16` | GPU quantization; use `int8` for CPU |
 | `beam_size` | `5` | higher = slightly more accurate, slower |
 | `cleanup` | `true` | LLM formatting pass (filler words, punctuation) |
+| `cleanup_guard` | `true` | reject LLM rewrites that invent words and keep the raw transcript |
 | `cleanup_model` | `llama3.1:8b` | any Ollama model or an OpenAI-compatible endpoint |
 | `cleanup_base_url` | `http://host.docker.internal:11434` | where the cleanup LLM lives |
 

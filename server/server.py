@@ -25,6 +25,8 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
+from cleanup import DEFAULT_CLEANUP_PROMPT, cleanup_ok, strip_decoration
+
 VERSION = "1.0.0"
 NAME = "vozlab"
 
@@ -42,15 +44,8 @@ DEFAULT_CONFIG = {
     "cleanup_base_url": "http://host.docker.internal:11434",
     "cleanup_temperature": 0.0,
     "cleanup_max_tokens": 500,
-    "cleanup_prompt": (
-        "You are a dictation formatter. The user spoke the text below and your job is "
-        "to produce the exact sentences they intended. Remove filler words (um, uh, "
-        "erm, este, bueno, like, you know), stutters and repeated words. Fix "
-        "punctuation, capitalization and spacing. "
-        "IMPORTANT: always keep the ORIGINAL language of the text — never translate it. "
-        "NEVER summarize, never add or remove information. "
-        "Output ONLY the corrected text — no quotes, no commentary."
-    ),
+    "cleanup_guard": True,              # reject cleanups that invent words, keep the raw text
+    "cleanup_prompt": DEFAULT_CLEANUP_PROMPT,
 }
 
 _state = {}
@@ -147,7 +142,13 @@ def require_auth(authorization: str = Header(default="")):
 
 def transcribe_raw(cfg, audio_path, language: str | None = None):
     """Run faster-whisper on a file path. Returns (raw_text, language)."""
-    kwargs = {"beam_size": cfg["beam_size"], "vad_filter": True}
+    kwargs = {
+        "beam_size": cfg["beam_size"],
+        "vad_filter": True,
+        # dictation clips are independent: without this, Whisper can repeat or
+        # invent text when the audio is quiet or short (hallucinations)
+        "condition_on_previous_text": False,
+    }
     lang = language or cfg["language"]
     if lang and lang.lower() != "auto":
         kwargs["language"] = lang
@@ -172,7 +173,7 @@ async def cleanup_text(cfg, raw_text: str) -> str:
     async with httpx.AsyncClient(timeout=120.0) as client:
         r = await client.post(f"{cfg['cleanup_base_url'].rstrip('/')}/api/chat", json=payload)
         r.raise_for_status()
-        return r.json()["message"]["content"].strip()
+        return strip_decoration(r.json()["message"]["content"])
 
 
 def service_info():
@@ -237,10 +238,22 @@ async def transcribe(
 
     use_cleanup = cfg["cleanup"] if cleanup is None else cleanup
     text, t_clean = raw_text, 0.0
+    cleanup_rejected = None
     if use_cleanup and raw_text:
         t_clean = time.time()
         try:
-            text = await cleanup_text(cfg, raw_text)
+            candidate = await cleanup_text(cfg, raw_text)
+            if cfg.get("cleanup_guard", True):
+                ok, reason = cleanup_ok(raw_text, candidate)
+                if not ok:
+                    cleanup_rejected = reason
+                    print(f"[vozlab] cleanup rejected ({reason}); keeping raw transcript",
+                          flush=True)
+                    text = raw_text
+                else:
+                    text = candidate
+            else:
+                text = candidate
         except Exception as e:  # noqa: BLE001 — never fail dictation because the LLM errored
             print(f"[vozlab] cleanup failed, returning raw: {e}", flush=True)
             text = raw_text
@@ -250,6 +263,7 @@ async def transcribe(
         "text": text,
         "raw_text": raw_text,
         "cleanup_used": use_cleanup and bool(raw_text),
+        "cleanup_rejected": cleanup_rejected,
         "language": language,
         "timings": {
             "whisper_s": round(t_whisper, 3),

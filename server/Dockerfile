@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir \
 ENV LD_LIBRARY_PATH=/usr/local/lib/python3.12/site-packages/nvidia/cublas/lib:/usr/local/lib/python3.12/site-packages/nvidia/cudnn/lib:/usr/local/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu
 
 WORKDIR /app
-COPY server.py /app/server.py
+COPY server.py cleanup.py /app/
 
 # Model cache lives on the host so downloads survive rebuilds
 ENV HF_HOME=/data/hf

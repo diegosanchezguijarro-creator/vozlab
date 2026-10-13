@@ -43,13 +43,18 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Install test dependencies
+        run: pip install pytest
       - name: Byte-compile server
-        run: python -m compileall -q server/server.py
+        run: python -m compileall -q server/server.py server/cleanup.py
+      - name: Cleanup prompt + guard tests
+        working-directory: server
+        run: python -m pytest tests -q
       - name: Validate compose files
         working-directory: server
         run: |
           python - <<'EOF'
-          import yaml, sys
+          import yaml
           for f in ("docker-compose.yml", "docker-compose.cpu.yaml"):
               with open(f) as fh:
                   data = yaml.safe_load(fh)

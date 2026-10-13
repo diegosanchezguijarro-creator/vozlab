@@ -3,6 +3,23 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] — 2026-10-13
+
+### Fixed
+- **The AI formatting pass could "answer" dictated questions.** Saying
+  *"are you responding to me?"* produced *"Yes, I am responding to you."* because
+  the cleanup model treated the transcript as a conversation. The cleanup prompt
+  now forbids replying (with question examples), and a new server-side guard
+  rejects any rewrite that invents words, falling back to the raw transcript.
+- Whisper: `condition_on_previous_text=False` for dictation clips (reduces
+  invented text on short/quiet audio).
+
+### Added
+- Server: `cleanup_guard` setting, `cleanup_rejected` field in `/transcribe`
+  responses, and a test suite for the cleanup prompt + guard (15 tests).
+- Client: dictations are logged with both the raw and the formatted text
+  (`%APPDATA%\VozLab\vozlab.log`), and rejections are reported in the log.
+
 ## [1.0.1] — 2026-10-13
 
 ### Fixed
