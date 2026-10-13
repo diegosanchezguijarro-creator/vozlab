@@ -54,10 +54,30 @@ jobs:
         working-directory: server
         run: |
           python - <<'EOF'
-          import yaml
-          for f in ("docker-compose.yml", "docker-compose.cpu.yaml"):
+          import subprocess, yaml
+
+          files = ("docker-compose.yml", "docker-compose.gpu.yml",
+                   "docker-compose.full.yml", "docker-compose.full.gpu.yml")
+          for f in files:
               with open(f) as fh:
                   data = yaml.safe_load(fh)
               assert "services" in data, f
               print(f"{f}: OK")
+
+          # GPU must be opt-in: the base stacks must never request a GPU
+          def render(*args):
+              out = subprocess.run(["docker", "compose", *args, "config"],
+                                   capture_output=True, text=True, check=True).stdout
+              return out
+
+          for base in ("docker-compose.yml", "docker-compose.full.yml"):
+              rendered = render("-f", base)
+              assert "gpu" not in rendered, f"{base} must not request a GPU"
+              print(f"{base}: CPU-safe (no GPU request)")
+
+          for base, gpu in (("docker-compose.yml", "docker-compose.gpu.yml"),
+                            ("docker-compose.full.yml", "docker-compose.full.gpu.yml")):
+              rendered = render("-f", base, "-f", gpu)
+              assert "gpu" in rendered, f"{base} + {gpu} must request a GPU"
+              print(f"{base} + {gpu}: GPU requested")
           EOF

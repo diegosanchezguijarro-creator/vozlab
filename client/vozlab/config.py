@@ -34,6 +34,7 @@ DEFAULTS = {
     "show_pill": True,
     "pill_position": "bottom-center",   # bottom-center | bottom-right | top-right
     "launch_at_login": False,
+    "check_updates": False,     # opt-in: the only request that leaves your LAN
     "first_run_done": False,
 }
 

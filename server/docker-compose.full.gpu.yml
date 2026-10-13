@@ -1,0 +1,20 @@
+# GPU overlay for the all-in-one stack:
+#
+#   docker compose -f docker-compose.full.yml -f docker-compose.full.gpu.yml up -d
+services:
+  vozlab:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

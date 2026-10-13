@@ -246,10 +246,51 @@ class SettingsWindow:
                                              self.cfg.get("restore_clipboard", True))
         self.debug_switch = self._switch(card.body, tr("settings_debug"),
                                          self.cfg.get("debug", False))
+
+        # --- updates (opt-in; zero telemetry by default) ---
+        self.check_updates_switch = self._switch(card.body, tr("settings_check_updates"),
+                                                 self.cfg.get("check_updates", False),
+                                                 tr("settings_check_updates_hint"))
+        update_row = ctk.CTkFrame(card.body, fg_color="transparent")
+        update_row.pack(fill="x", pady=(theme.PAD_S, 0))
+        ctk.CTkButton(update_row, text=tr("settings_check_now"), height=32, width=130,
+                      font=theme.font(12), corner_radius=theme.RADIUS_CONTROL,
+                      fg_color="transparent", border_width=1, border_color=theme.BORDER,
+                      hover_color=theme.SURFACE_2,
+                      command=self._check_updates).pack(side="left")
+        if self.app.updater_script():
+            ctk.CTkButton(update_row, text=tr("settings_update_now"), height=32, width=130,
+                          font=theme.font(12), corner_radius=theme.RADIUS_CONTROL,
+                          fg_color=theme.ACCENT, hover_color=theme.ACCENT_HOVER,
+                          command=self.app.run_updater).pack(side="left", padx=8)
+        self.update_label = ctk.CTkLabel(update_row, text="", font=theme.font(12),
+                                         text_color=theme.TEXT_MUTED, wraplength=240,
+                                         justify="left")
+        self.update_label.pack(side="left", padx=8)
+
         ctk.CTkButton(card.body, text=tr("menu_folder"), height=32, font=theme.font(12),
                       corner_radius=theme.RADIUS_CONTROL, fg_color="transparent",
                       border_width=1, border_color=theme.BORDER, hover_color=theme.SURFACE_2,
                       command=self.app.open_config_folder).pack(anchor="w", pady=(theme.PAD_S, 0))
+
+        self._show_last_update()
+        self.app.update_reporter = self._show_last_update
+
+    def _show_last_update(self) -> None:
+        """Surface the last update check result (from startup or the button)."""
+        message = getattr(self.app, "last_update_message", "")
+        url = getattr(self.app, "last_update_url", "")
+        if not message:
+            return
+        try:
+            self.update_label.configure(text=message,
+                                        text_color=theme.WARN if url else theme.TEXT_MUTED)
+        except Exception:
+            pass
+
+    def _check_updates(self) -> None:
+        self.update_label.configure(text="…", text_color=theme.TEXT_MUTED)
+        self.app.check_for_updates(manual=True)
 
     def _switch(self, parent, text: str, value: bool, hint: str = ""):
         row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -339,6 +380,7 @@ class SettingsWindow:
         cfg["beeps"] = bool(self.beeps_switch.get())
         cfg["restore_clipboard"] = bool(self.clipboard_switch.get())
         cfg["debug"] = bool(self.debug_switch.get())
+        cfg["check_updates"] = bool(self.check_updates_switch.get())
         cfg["calibrate"] = False
         cfg["first_run_done"] = True
 

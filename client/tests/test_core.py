@@ -354,6 +354,69 @@ def test_cancel_resets_duration():
     assert rec.duration() == 0.0
 
 
+# ------------------------------------------------------------- updater ------
+def test_version_parsing():
+    from vozlab.updater import parse_version
+
+    assert parse_version("v1.2.3") == (1, 2, 3)
+    assert parse_version("1.2.3") == (1, 2, 3)
+    assert parse_version("1.2") == (1, 2, 0)
+    assert parse_version("v1.2.3-rc4") == (1, 2, 3)
+    assert parse_version("") == (0, 0, 0)
+    assert parse_version("garbage") == (0, 0, 0)
+
+
+def test_is_newer():
+    from vozlab.updater import is_newer
+
+    assert is_newer("1.1.1", "1.1.0")
+    assert is_newer("1.2.0", "1.1.9")
+    assert is_newer("2.0.0", "1.99.99")
+    assert not is_newer("1.1.0", "1.1.0")
+    assert not is_newer("1.0.9", "1.1.0")
+    assert not is_newer("garbage", "1.1.0")
+
+
+def test_version_mismatch_only_cares_about_major_minor():
+    from vozlab.updater import version_mismatch
+
+    assert not version_mismatch("1.1.2", "1.1.9")      # patch drift is fine
+    assert version_mismatch("1.0.0", "1.1.0")
+    assert version_mismatch("2.0.0", "1.1.0")
+    assert not version_mismatch("1.1.2", "1.1.2")
+
+
+def test_updater_check_returns_none_when_current(monkeypatch):
+    from vozlab import updater
+
+    monkeypatch.setattr(updater, "latest_release",
+                        lambda repo=updater.DEFAULT_REPO, timeout=8.0: {
+                            "tag": "v1.1.0", "version": "1.1.0", "url": "", "notes": ""})
+    assert updater.check(current="1.1.0") is None
+    found = updater.check(current="1.0.0")
+    assert found and found["version"] == "1.1.0"
+
+
+def test_updater_raises_friendly_error(monkeypatch):
+    import requests
+
+    from vozlab import updater
+
+    def boom(*_a, **_k):
+        raise requests.ConnectionError("no internet")
+
+    monkeypatch.setattr(updater.requests, "get", boom)
+    with pytest.raises(updater.UpdateError):
+        updater.latest_release()
+
+
+def test_update_check_is_off_by_default():
+    from vozlab import config as cfgmod
+
+    assert cfgmod.DEFAULTS["check_updates"] is False, \
+        "zero telemetry: no network calls unless the user opts in"
+
+
 # ------------------------------------------------------------- packaging ----
 def test_version_exposed():
     from vozlab import VERSION

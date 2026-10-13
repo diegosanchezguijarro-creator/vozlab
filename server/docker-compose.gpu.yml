@@ -1,0 +1,15 @@
+# GPU overlay — add this when the machine has a working NVIDIA GPU:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+#
+# Without it, VozLab runs on the CPU (works, but several times slower).
+# install.sh adds this automatically when nvidia-smi reports a GPU.
+services:
+  vozlab:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

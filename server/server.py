@@ -27,10 +27,24 @@ from starlette.concurrency import run_in_threadpool
 
 from cleanup import DEFAULT_CLEANUP_PROMPT, cleanup_ok, strip_decoration
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 NAME = "vozlab"
+API_VERSION = 1          # bump when the HTTP contract changes incompatibly
 
 CONFIG_PATH = os.environ.get("VOZLAB_CONFIG", "/data/config.json")
+
+# Environment overrides — handy for Docker/Compose deployments where editing
+# config.json is awkward. Anything set here wins over the file.
+ENV_OVERRIDES = {
+    "VOZLAB_TOKEN": "token",
+    "VOZLAB_WHISPER_MODEL": "whisper_model",
+    "VOZLAB_LANGUAGE": "language",
+    "VOZLAB_COMPUTE_TYPE": "compute_type",
+    "VOZLAB_CLEANUP": "cleanup",
+    "VOZLAB_CLEANUP_GUARD": "cleanup_guard",
+    "VOZLAB_CLEANUP_MODEL": "cleanup_model",
+    "VOZLAB_CLEANUP_BASE_URL": "cleanup_base_url",
+}
 MAX_AUDIO_BYTES = 25 * 1024 * 1024  # 25 MB (~2h of 16kHz mono WAV)
 
 DEFAULT_CONFIG = {
@@ -51,6 +65,19 @@ DEFAULT_CONFIG = {
 _state = {}
 
 
+def _apply_env(cfg: dict) -> dict:
+    """Apply VOZLAB_* environment overrides on top of the config file."""
+    for env_name, key in ENV_OVERRIDES.items():
+        raw = os.environ.get(env_name)
+        if raw is None or raw == "":
+            continue
+        if isinstance(DEFAULT_CONFIG.get(key), bool):
+            cfg[key] = raw.strip().lower() in ("1", "true", "yes", "on")
+        else:
+            cfg[key] = raw
+    return cfg
+
+
 def load_config():
     """Read config.json, creating it with a generated token on first boot."""
     cfg = dict(DEFAULT_CONFIG)
@@ -58,10 +85,11 @@ def load_config():
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH) as f:
             cfg.update(json.load(f))
+    cfg = _apply_env(cfg)
     if not cfg.get("token"):
         cfg["token"] = secrets.token_urlsafe(24)
         created = True
-    if created:
+    if created and not os.environ.get("VOZLAB_TOKEN"):
         try:
             os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
             with open(CONFIG_PATH, "w") as f:
@@ -181,6 +209,7 @@ def service_info():
     return {
         "name": NAME,
         "version": VERSION,
+        "api": API_VERSION,
         "whisper_model": cfg["whisper_model"],
         "language": cfg["language"],
         "cleanup": cfg["cleanup"],
@@ -201,7 +230,7 @@ async def health():
 
 @app.get("/version")
 async def version():
-    return {"name": NAME, "version": VERSION}
+    return {"name": NAME, "version": VERSION, "api": API_VERSION}
 
 
 @app.post("/transcribe")

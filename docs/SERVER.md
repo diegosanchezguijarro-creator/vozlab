@@ -17,14 +17,28 @@ macOS/Windows servers are possible (Docker Desktop) but not tested.
 
 ## Install
 
+### Easiest: published image + bundled AI
+
 ```bash
-git clone https://github.com/<your-user>/vozlab.git
+git clone https://github.com/diegosanchezguijarro-creator/vozlab.git
+cd vozlab/server
+bash install.sh --with-ai
+```
+
+This pulls the published server image **and** Ollama, then downloads the cleanup
+model automatically (~4 GB, once). Nothing else to install.
+
+### From this checkout (builds locally, uses an Ollama you already have)
+
+```bash
+git clone https://github.com/diegosanchezguijarro-creator/vozlab.git
 cd vozlab/server
 bash install.sh
 ```
 
-`install.sh` detects a working NVIDIA GPU (and falls back to CPU mode if not),
-builds the image, starts the container and prints:
+`install.sh` detects a working NVIDIA GPU (adding the GPU overlay automatically)
+and falls back to CPU mode otherwise. It builds the image, starts the container
+and prints:
 
 ```
 Server URL : http://192.168.0.23:8092
@@ -37,10 +51,21 @@ First start downloads the Whisper model (~500 MB) into `server/data/hf/`.
 
 ```bash
 cd server
-docker compose up -d --build              # GPU
-docker compose -f docker-compose.yml -f docker-compose.cpu.yaml up -d --build   # CPU only
+
+# from this checkout (builds the image locally)
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build   # with NVIDIA GPU
+docker compose -f docker-compose.yml up -d --build                            # CPU only
+
+# or use the published image + bundled Ollama (no build, needs no local Ollama)
+docker compose -f docker-compose.full.yml -f docker-compose.full.gpu.yml up -d
+docker compose -f docker-compose.full.yml up -d                               # CPU only
+
 docker logs -f vozlab                     # watch startup, shows the token
 ```
+
+GPU support is **opt-in** (`docker-compose.gpu.yml`): the base stacks always run
+on CPU, so a machine without an NVIDIA GPU (or without the container toolkit)
+starts cleanly instead of failing on a device request.
 
 ## Connecting the app
 

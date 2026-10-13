@@ -1,0 +1,47 @@
+# All-in-one VozLab stack: the dictation server + the local cleanup AI.
+#
+#   docker compose -f docker-compose.full.yml up -d
+#
+# Everything runs on your machine: Whisper (in the vozlab container) and
+# Ollama (the text-formatting model). No cloud, no API keys.
+#
+# Override the cleanup model:
+#   VOZLAB_CLEANUP_MODEL=qwen2.5:3b-instruct docker compose -f docker-compose.full.yml up -d
+#
+# CPU-only (no NVIDIA GPU): add -f docker-compose.full.cpu.yaml
+
+services:
+  vozlab:
+    image: ghcr.io/diegosanchezguijarro-creator/vozlab-server:${VOZLAB_VERSION:-latest}
+    container_name: vozlab
+    restart: unless-stopped
+    ports:
+      - "8092:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      # the sibling ollama service, not the host
+      - VOZLAB_CLEANUP_BASE_URL=http://ollama:11434
+      - VOZLAB_CLEANUP_MODEL=${VOZLAB_CLEANUP_MODEL:-qwen2.5:7b-instruct}
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: vozlab-ollama
+    restart: unless-stopped
+    volumes:
+      - ./ollama_data:/root/.ollama
+
+  # One-shot helper: downloads the cleanup model on first start (~4 GB) so the
+  # first dictation is not stuck waiting for a model download.
+  model-preload:
+    image: ollama/ollama:latest
+    container_name: vozlab-model-preload
+    restart: "no"
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - MODEL=${VOZLAB_CLEANUP_MODEL:-qwen2.5:7b-instruct}
+    entrypoint: ["/bin/sh", "-c", "sleep 3; echo \"preloading $$MODEL...\"; ollama pull \"$$MODEL\"; echo done"]

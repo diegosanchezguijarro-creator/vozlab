@@ -2,6 +2,7 @@
 
 import os
 import queue
+import subprocess
 import sys
 import threading
 import time
@@ -11,7 +12,7 @@ import keyboard
 import pyperclip
 
 from . import APP_NAME, VERSION
-from . import audio, config as cfgmod, hotkeys, i18n, log, tray
+from . import audio, config as cfgmod, hotkeys, i18n, log, tray, updater
 from .api import ApiError, VozLabAPI
 from .ui import about as about_ui
 from .ui import pill as pill_ui
@@ -87,6 +88,8 @@ class VozLabApp:
         )
         self.settings_window = None
         self.wizard = None
+        self.last_update_message = ""
+        self.last_update_url = ""
 
     # -- thread marshalling --------------------------------------------------
     def post(self, fn) -> None:
@@ -115,6 +118,7 @@ class VozLabApp:
         tray.TrayIcon.run_in_thread(self.tray)
         self.hotkeys.start()
         self.check_server_async()
+        self.root.after(4000, lambda: self.check_for_updates(manual=False))
 
         needs_setup = (not self.cfg.get("first_run_done")
                        or not self.cfg.get("token")
@@ -135,8 +139,70 @@ class VozLabApp:
 
     def _server_ok(self, health: dict) -> None:
         self._log("server ok", health)
+        server_version = health.get("version") or ""
+        if server_version and updater.version_mismatch(server_version, VERSION):
+            log.log(f"server is v{server_version} but this app is v{VERSION} — "
+                    f"update the server: docker compose pull && docker compose up -d")
+            if self.overlay:
+                self.overlay.show(self.tr("err_server_version", server=server_version,
+                                          client=VERSION), "error", auto_hide_ms=6000)
         self.tray.set_state("idle", tooltip=self.tr("tray_tooltip",
                                                     key=hotkeys.describe_hotkey(self.cfg.get("hotkey"))))
+
+    def check_for_updates(self, manual: bool = False) -> None:
+        """Ask GitHub for a newer release (only when enabled or user-initiated)."""
+        if not manual and not self.cfg.get("check_updates"):
+            return
+
+        def run():
+            try:
+                release = updater.check()
+            except updater.UpdateError as e:
+                log.log(f"update check failed: {e}")
+                if manual:
+                    self.post(lambda: self._report_update(
+                        self.tr("update_check_failed", error=e)))
+                return
+            if release:
+                log.log(f"update available: {release['version']} (you have {VERSION})")
+                self.post(lambda: self._report_update(
+                    self.tr("update_available", version=release["version"]),
+                    url=release["url"]))
+            elif manual:
+                self.post(lambda: self._report_update(
+                    self.tr("update_up_to_date", version=VERSION)))
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _report_update(self, message: str, url: str = "") -> None:
+        """Show the result in the tray tooltip + overlay, and remember it."""
+        self.last_update_message = message
+        self.last_update_url = url
+        log.log(message)
+        if self.overlay:
+            self.overlay.show(message, "info", auto_hide_ms=6000)
+
+    def updater_script(self) -> str | None:
+        """Path to update.ps1 when this copy was installed by deploy.ps1."""
+        base = os.environ.get("LOCALAPPDATA")
+        if not base:
+            return None
+        candidate = os.path.join(base, "Programs", "VozLab", "update.ps1")
+        return candidate if os.path.exists(candidate) else None
+
+    def run_updater(self) -> None:
+        """Launch the updater script; it reinstalls and restarts the app."""
+        script = self.updater_script()
+        if not script:
+            return
+        log.log(f"running updater: {script}")
+        try:
+            subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                              "-File", script], shell=False)
+        except Exception as e:  # noqa: BLE001
+            self._notify_error(self.tr("err_generic", error=e))
+            return
+        self.root.after(1500, self.quit_app)
 
     def _server_fail(self, err: ApiError) -> None:
         self.tray.set_state("offline", tooltip=self.tr("state_offline"))

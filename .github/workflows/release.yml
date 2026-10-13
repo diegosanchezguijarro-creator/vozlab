@@ -6,9 +6,13 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
-  windows-installer:
+  # ---------------------------------------------------------------------------
+  # 1. Windows app: PyInstaller build, Inno Setup installer, source zip, checksums
+  # ---------------------------------------------------------------------------
+  windows-app:
     runs-on: windows-latest
 
     steps:
@@ -23,21 +27,21 @@ jobs:
         shell: bash
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Check the tag matches vozlab/__init__.py
+      - name: Check the tag matches the code
         shell: bash
         working-directory: client
         run: |
-          code_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("vozlab/__init__.py").read()).group(1))')"
+          client_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("vozlab/__init__.py").read()).group(1))')"
           server_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("../server/server.py").read()).group(1))')"
-          if [ "$code_version" != "${{ steps.ver.outputs.version }}" ]; then
-            echo "::error::tag v${{ steps.ver.outputs.version }} does not match client VERSION=$code_version"
+          if [ "$client_version" != "${{ steps.ver.outputs.version }}" ]; then
+            echo "::error::tag v${{ steps.ver.outputs.version }} does not match client VERSION=$client_version"
             exit 1
           fi
           if [ "$server_version" != "${{ steps.ver.outputs.version }}" ]; then
             echo "::error::tag v${{ steps.ver.outputs.version }} does not match server VERSION=$server_version"
             exit 1
           fi
-          echo "version $code_version OK (client + server)"
+          echo "version $client_version OK (client + server)"
 
       - name: Install dependencies
         working-directory: client
@@ -62,6 +66,28 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path client/dist/VozLab/* -DestinationPath "client/dist/VozLab-${{ steps.ver.outputs.version }}-portable.zip"
 
+      # The Smart-App-Control-safe download: source + scripts, installed via
+      # installer/deploy.ps1 (no unsigned .exe involved).
+      - name: Build source zip
+        shell: pwsh
+        run: |
+          git archive --format=zip --prefix="VozLab/" -o "VozLab-${{ steps.ver.outputs.version }}-src.zip" HEAD
+
+      - name: Checksums
+        shell: pwsh
+        run: |
+          $files = @(
+            "installer/output/VozLab-Setup-${{ steps.ver.outputs.version }}.exe",
+            "client/dist/VozLab-${{ steps.ver.outputs.version }}-portable.zip",
+            "VozLab-${{ steps.ver.outputs.version }}-src.zip"
+          )
+          $lines = foreach ($f in $files) {
+            $hash = (Get-FileHash -Algorithm SHA256 -Path $f).Hash.ToLower()
+            "$hash  $(Split-Path -Leaf $f)"
+          }
+          $lines | Set-Content -Encoding ascii SHA256SUMS
+          Get-Content SHA256SUMS
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
@@ -71,3 +97,36 @@ jobs:
           files: |
             installer/output/VozLab-Setup-*.exe
             client/dist/VozLab-*-portable.zip
+            VozLab-*-src.zip
+            SHA256SUMS
+
+  # ---------------------------------------------------------------------------
+  # 2. Server image → GitHub Container Registry
+  # ---------------------------------------------------------------------------
+  server-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: server
+          file: server/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/vozlab-server:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/vozlab-server:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
