@@ -81,7 +81,8 @@ class ScribeApp:
                              fingerprint=self.cfg.get("tls_pin", ""))
         self._last_level_post = 0.0
 
-        self.overlay = pill_ui.PillOverlay(self.root, self.cfg) if self.cfg.get("show_pill") else None
+        self.overlay = (pill_ui.PillOverlay(self.root, self.cfg, self._log)
+                        if self.cfg.get("show_pill") else None)
         if self.overlay:
             self.overlay.on_click = lambda: self.post(self.copy_last_text)
 
@@ -511,7 +512,7 @@ class ScribeApp:
         self.root.configure(fg_color=theme.BG)
 
         if cfg.get("show_pill") and self.overlay is None:
-            self.overlay = pill_ui.PillOverlay(self.root, cfg)
+            self.overlay = pill_ui.PillOverlay(self.root, cfg, self._log)
         elif not cfg.get("show_pill") and self.overlay is not None:
             self.overlay.destroy()
             self.overlay = None

@@ -229,6 +229,17 @@ def test_ellipsize_never_overflows_an_empty_budget():
     assert pill._ellipsize("hello", 3, lambda s: len(s) * 7) == ""
 
 
+def test_pill_anchor_centers_and_clamps():
+    from scribe.ui import pill
+
+    # bottom-center on a 1920x1080 monitor: 200x48 pill, 90px margin, 40px edge
+    assert pill._anchor("bottom-center", 200, 48, 1920, 1080, 90, 40) == (860, 942)
+    assert pill._anchor("bottom-right", 200, 48, 1920, 1080, 90, 40) == (1680, 942)
+    assert pill._anchor("top-right", 200, 48, 1920, 1080, 90, 40) == (1680, 40)
+    # a pill wider than its screen is clamped, never pushed negative
+    assert pill._anchor("bottom-center", 2000, 48, 1920, 1080, 90, 40) == (0, 942)
+
+
 # --------------------------------------------------------------- branding --
 
 

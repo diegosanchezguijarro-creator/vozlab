@@ -6,6 +6,7 @@ and animated at 25 fps. On Windows `-transparentcolor` keys out the corners and
 elsewhere it degrades to a plain dark rectangle.
 """
 
+import sys
 import time
 import tkinter as tk
 import tkinter.font as tkfont
@@ -22,6 +23,20 @@ BASE_DPI = 96.0
 # panel (translucent glass). Tk only offers uniform window alpha, so the label
 # and dot fade with it — keep this high enough to stay readable.
 REST_ALPHA = 0.84
+
+
+def _anchor(position: str, w: int, h: int, sw: int, sh: int,
+            margin: int, edge: int) -> tuple[int, int]:
+    """Top-left corner of a w×h window inside a sw×sh area, clamped to fit."""
+    if position == "top-right":
+        x, y = sw - w - edge, edge
+    elif position == "bottom-right":
+        x, y = sw - w - edge, sh - h - margin
+    else:                                   # bottom-center
+        x, y = (sw - w) // 2, sh - h - margin
+    x = min(max(x, 0), max(0, sw - w))
+    y = min(max(y, 0), max(0, sh - h))
+    return x, y
 
 
 def _ellipsize(text: str, max_px: int, measure) -> str:
@@ -52,10 +67,11 @@ class PillOverlay:
     MIN_WIDTH_MINIMAL = 120
     MAX_WIDTH = 540
 
-    def __init__(self, root: tk.Tk, cfg: dict):
+    def __init__(self, root: tk.Tk, cfg: dict, debug_log=None):
         self.root = root
         self.position = cfg.get("pill_position", "bottom-center")
         self.style = cfg.get("pill_style", "full")       # full | minimal
+        self.debug_log = debug_log
         self._state = "info"
         self._text = ""
         self._shown_text = ""
@@ -111,6 +127,9 @@ class PillOverlay:
             self.window.deiconify()
             self.window.lift()
             self._visible = True
+            # Tk does not always apply geometry set while a window is withdrawn:
+            # place again now that the window is really mapped
+            self._place()
             self._fade(REST_ALPHA)
         self._start_animation()
         if auto_hide_ms:
@@ -248,19 +267,71 @@ class PillOverlay:
         self._anim_job = self.root.after(FRAME_MS, self._tick)
 
     # -- window --------------------------------------------------------------
+    def _windows_work_area(self):
+        """Work area of the monitor under the cursor, in device pixels.
+
+        Windows only. Tk's `winfo_screenwidth()` can report the *virtual* desktop
+        (all monitors) or a scaled size, which is what pushed the pill off-centre
+        on a single-screen laptop. `GetMonitorInfo` returns the real work area of
+        the monitor the user is actually on, so we centre inside that instead.
+        """
+        if not sys.platform.startswith("win"):
+            return None
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            class RECT(ctypes.Structure):
+                _fields_ = [("left", wintypes.LONG), ("top", wintypes.LONG),
+                            ("right", wintypes.LONG), ("bottom", wintypes.LONG)]
+
+            class MONITORINFO(ctypes.Structure):
+                _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", RECT),
+                            ("rcWork", RECT), ("dwFlags", wintypes.DWORD)]
+
+            user32 = ctypes.windll.user32
+            user32.MonitorFromPoint.argtypes = [wintypes.POINT, wintypes.DWORD]
+            user32.MonitorFromPoint.restype = ctypes.c_void_p
+            user32.GetMonitorInfoW.argtypes = [ctypes.c_void_p,
+                                               ctypes.POINTER(MONITORINFO)]
+            user32.GetMonitorInfoW.restype = wintypes.BOOL
+
+            point = wintypes.POINT()
+            if not user32.GetCursorPos(ctypes.byref(point)):
+                return None
+            monitor = user32.MonitorFromPoint(point, 2)   # MONITOR_DEFAULTTONEAREST
+            info = MONITORINFO()
+            info.cbSize = ctypes.sizeof(MONITORINFO)
+            if not monitor or not user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
+                return None
+            work = info.rcWork
+            return (work.left, work.top,
+                    work.right - work.left, work.bottom - work.top)
+        except Exception:  # noqa: BLE001 — fall back to Tk rather than fail
+            return None
+
     def _place(self) -> None:
         self.window.update_idletasks()
         w, h = self._measure()
-        sw = self.window.winfo_screenwidth()
-        sh = self.window.winfo_screenheight()
-        margin = 90
-        if self.position == "top-right":
-            x, y = sw - w - 40, 40
-        elif self.position == "bottom-right":
-            x, y = sw - w - 40, sh - h - margin
+        u = self._unit()
+        edge = int(round(40 * u))
+        margin = int(round(90 * u))
+
+        area = self._windows_work_area()
+        if area:
+            left, top, sw, sh = area
         else:
-            x, y = (sw - w) // 2, sh - h - margin
-        self.window.geometry(f"{w}x{h}+{max(x, 0)}+{max(y, 0)}")
+            left, top = 0, 0
+            sw = self.window.winfo_screenwidth()
+            sh = self.window.winfo_screenheight()
+
+        x, y = _anchor(self.position, w, h, sw, sh, margin, edge)
+        self.window.geometry(f"{w}x{h}+{left + x}+{top + y}")
+        if self.debug_log:
+            self.debug_log(
+                f"pill {w}x{h} at {left + x},{top + y} | monitor {sw}x{sh}@{left},{top} "
+                f"| tk_screen {self.window.winfo_screenwidth()}x"
+                f"{self.window.winfo_screenheight()} dpi_factor {u:.3f}")
 
     def _after_fade_out(self) -> None:
         if self._alpha <= 0.01:

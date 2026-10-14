@@ -3,6 +3,22 @@
 All notable changes to Scribe are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] — 2026-10-14
+
+### Fixed — the pill is genuinely centred now
+- The pill is positioned from the **monitor's work area** (Win32
+  `GetMonitorInfo` for the monitor the cursor is on) instead of Tk's
+  `winfo_screenwidth()`. CustomTkinter turns on per-monitor DPI awareness
+  *after* Tk has read the display metrics, so Tk's cached screen size can be the
+  pre-awareness (scaled/virtual) value — which kept pushing the pill off-centre
+  on a laptop even after 1.5.0 fixed the label width.
+- The position is applied again after the window is mapped (Tk does not always
+  apply geometry set while a window is withdrawn), and it is clamped to the work
+  area so the pill can never land half off-screen.
+- With **Settings → System → Debug logging** on, the pill now logs its size,
+  position and the monitor it measured, so any future misplacement can be
+  diagnosed from the log instead of guessed at.
+
 ## [1.6.0] — 2026-10-14
 
 **The rename is complete: no "VozLab" left anywhere, with a migration that

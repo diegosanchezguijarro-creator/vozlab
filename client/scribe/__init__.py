@@ -7,5 +7,5 @@
 APP_NAME = "Scribe"
 DISPLAY_NAME = "Scribe"
 APP_ID = "scribe"
-VERSION = "1.6.0"
+VERSION = "1.6.1"
 __all__ = ["APP_NAME", "DISPLAY_NAME", "APP_ID", "VERSION"]

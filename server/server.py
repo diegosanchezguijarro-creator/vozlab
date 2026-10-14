@@ -38,7 +38,7 @@ from starlette.concurrency import run_in_threadpool
 from cleanup import (DEFAULT_CLEANUP_PROMPT, STYLES, build_prompt, cleanup_ok,
                      normalize_style, sanitize_vocabulary, strip_decoration)
 
-VERSION = "1.6.0"
+VERSION = "1.6.1"
 NAME = "scribe"
 API_VERSION = 1          # bump when the HTTP contract changes incompatibly
 
