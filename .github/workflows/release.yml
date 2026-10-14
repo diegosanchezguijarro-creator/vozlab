@@ -89,7 +89,7 @@ jobs:
           Get-Content SHA256SUMS
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Scribe ${{ steps.ver.outputs.version }}
           draft: false
@@ -150,6 +150,6 @@ jobs:
           upload-artifact: false                      # no duplicate in the run artifacts
 
       - name: Attach the SBOM to the release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: scribe-server.spdx.json
