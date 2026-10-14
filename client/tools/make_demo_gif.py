@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render an animated demo GIF of the VozLab status pill.
+"""Render an animated demo GIF of the Scribe status pill.
 
     Xvfb :99 -screen 0 1280x800x24 &
     DISPLAY=:99 python tools/make_demo_gif.py          # -> docs/images/demo.gif

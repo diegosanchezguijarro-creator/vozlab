@@ -1,5 +1,5 @@
 @echo off
-rem VozLab installer — double-click friendly wrapper around deploy.ps1
+rem Scribe installer — double-click friendly wrapper around deploy.ps1
 rem Works with Smart App Control enabled (no unsigned .exe is executed).
 setlocal
 
@@ -24,7 +24,7 @@ set "CODE=%ERRORLEVEL%"
 
 echo.
 if "%CODE%"=="0" (
-    echo VozLab is ready. Look for the microphone icon in the system tray.
+    echo Scribe is ready. Look for the microphone icon in the system tray.
 ) else (
     echo Installation failed ^(code %CODE%^). See the messages above.
 )

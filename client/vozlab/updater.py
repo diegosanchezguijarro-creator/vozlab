@@ -1,6 +1,6 @@
 """Update checks against GitHub releases.
 
-Disabled by default: VozLab ships zero telemetry, so the only time it talks to
+Disabled by default: Scribe ships zero telemetry, so the only time it talks to
 the internet is when you turn this on in Settings or press "Check now".
 (`deploy.ps1` / `update.ps1` also contact GitHub, but only when you run them.)
 """

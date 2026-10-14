@@ -128,7 +128,7 @@ The settings that are safe to hand to a client — **never the token**:
   "cleanup_model": "qwen2.5:7b-instruct",
   "cleanup_base_url": "http://host.docker.internal:11434",
   "cleanup_temperature": 0.0, "cleanup_max_tokens": 500,
-  "vocabulary": ["VozLab", "Diego"],
+  "vocabulary": ["Scribe", "Diego"],
   "styles": ["bullets", "casual", "concise", "default", "formal"],
   "expose_details": false, "token_set": true, "config_path": "/data/config.json"
 }
@@ -200,7 +200,7 @@ way — rotate it by editing the file and restarting.
 
 The app can find the server without being told an IP address. Send
 `VOZLAB/1 discover\n` to UDP **8093** (broadcast, or the subnet broadcast
-address) and every VozLab server on the network answers with a small JSON object:
+address) and every Scribe server on the network answers with a small JSON object:
 
 ```json
 { "name": "vozlab", "version": "1.4.0", "api": 1, "port": 8092,

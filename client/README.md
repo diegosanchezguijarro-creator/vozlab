@@ -1,6 +1,6 @@
-# VozLab client
+# Scribe client
 
-Windows tray app for [VozLab](../README.md): hold a key, speak, release — your
+Windows tray app for [Scribe](../README.md): hold a key, speak, release — your
 words are transcribed by your own server and pasted into the focused app.
 
 - **Users:** see [../docs/CLIENT.md](../docs/CLIENT.md)

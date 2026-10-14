@@ -1,4 +1,4 @@
-"""HTTP client for the VozLab server.
+"""HTTP client for the Scribe server.
 
 Works over plain HTTP on a trusted LAN, or over HTTPS with **certificate
 pinning**: the app remembers the server's certificate fingerprint the first time

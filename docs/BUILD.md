@@ -1,4 +1,4 @@
-# Building VozLab
+# Building Scribe
 
 ## Automatically (GitHub Actions)
 

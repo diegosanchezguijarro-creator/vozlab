@@ -1,4 +1,4 @@
-"""VozLab server — local speech-to-text + LLM cleanup, exposes an HTTP API.
+"""Scribe server — local speech-to-text + LLM cleanup, exposes an HTTP API.
 
 Nothing leaves your network: Whisper + the cleanup LLM run on this machine.
 
@@ -38,7 +38,7 @@ from starlette.concurrency import run_in_threadpool
 from cleanup import (DEFAULT_CLEANUP_PROMPT, STYLES, build_prompt, cleanup_ok,
                      normalize_style, sanitize_vocabulary, strip_decoration)
 
-VERSION = "1.4.1"
+VERSION = "1.5.0"
 NAME = "vozlab"
 API_VERSION = 1          # bump when the HTTP contract changes incompatibly
 
@@ -229,13 +229,13 @@ def banner(cfg):
     it never lands in `docker logs` / journald on every restart."""
     line = "=" * 66
     print(line, flush=True)
-    print(f"  VozLab server v{VERSION} — 100% local dictation", flush=True)
+    print(f"  Scribe server v{VERSION} — 100% local dictation", flush=True)
     print(line, flush=True)
     print(f"  Whisper model : {cfg['whisper_model']}  (language: {cfg['language']})", flush=True)
     print(f"  Cleanup LLM   : {cfg['cleanup_model'] if cfg['cleanup'] else 'disabled'}", flush=True)
     print(flush=True)
     if _state.get("token_created"):
-        print("  NEW TOKEN — paste this into the VozLab app (shown once):", flush=True)
+        print("  NEW TOKEN — paste this into the Scribe app (shown once):", flush=True)
         print(f"      {cfg['token']}", flush=True)
     else:
         print("  Token: already configured (see ./data/config.json if you need it again)", flush=True)

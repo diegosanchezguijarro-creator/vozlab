@@ -5,7 +5,6 @@ import time
 
 import customtkinter as ctk
 
-from .. import APP_NAME
 from .. import config as cfgmod
 from .. import hotkeys as hotkeys_mod
 from ..api import ApiError, VozLabAPI
@@ -22,7 +21,7 @@ class Wizard:
         tr = app.tr
 
         self.win = ctk.CTkToplevel(app.root)
-        self.win.title(f"{APP_NAME} — {tr('wizard_title')}")
+        self.win.title(tr("wizard_title"))
         self.win.geometry("620x600")
         self.win.resizable(False, False)
         self.win.attributes("-topmost", True)

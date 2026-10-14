@@ -1,7 +1,27 @@
 # Changelog
 
-All notable changes to VozLab are documented here.
+All notable changes to Scribe are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
+
+## [1.5.0] — 2026-10-14
+
+**The app is now called Scribe, and the status pill is translucent glass.**
+
+### Changed — renamed to Scribe
+- Everywhere you see the product — tray tooltip and menus, settings and wizard
+  titles, the About window, the startup log line and the docs — it now reads
+  **Scribe**.
+- The stable identifiers are deliberately unchanged so nothing breaks: the
+  config folder (`%APPDATA%\VozLab`), the DPAPI-encrypted token, the log
+  filename, the `VOZLAB_*` environment variables, the
+  `ghcr.io/diegosg-dev/vozlab-server` image, the release asset names
+  (`VozLab-Setup-*.exe`, `VozLab-<v>-src.zip`) and the Windows Start-menu
+  shortcut / startup entry. Your machine keeps its settings and token — no
+  migration, no re-entering anything.
+
+### Changed — translucent glass pill
+- The pill body is ~84% opaque, so the desktop shows through it instead of a
+  solid dark box.
 
 ## [1.4.1] — 2026-10-14
 
@@ -49,8 +69,8 @@ vocabulary, LAN discovery, and an arm64 image.**
   **injected into the formatter prompt** and passed to Whisper as an
   `initial_prompt`.
 - Measurable effect on the test corpus: the bundled sample used to transcribe
-  "For some self-test"; with `VozLab` in the vocabulary it transcribes
-  "VozLab self-test".
+  "For some self-test"; with `Scribe` in the vocabulary it transcribes
+  "Scribe self-test".
 - Managed from *Settings → Formatting → Names and terms* (`PATCH /settings`,
   sanitized: de-duplicated, trimmed, capped at 200 terms).
 

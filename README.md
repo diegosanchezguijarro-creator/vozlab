@@ -1,4 +1,4 @@
-# VozLab
+# Scribe
 
 **Local, private voice dictation for Windows.** Hold a key, speak, release — your
 words appear in whatever app you're using, formatted. Speech recognition and text
@@ -6,7 +6,7 @@ cleanup run on **your own machine**. No cloud, no subscription, no account, and 
 audio leaving your network.
 
 <p align="center">
-  <img src="docs/images/demo.gif" width="432" alt="VozLab status pill: listening, transcribing, done">
+  <img src="docs/images/demo.gif" width="432" alt="Scribe status pill: listening, transcribing, done">
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@ audio leaving your network.
 
 ## What it does
 
-You keep a key held while you talk (~5 seconds of speech), VozLab:
+You keep a key held while you talk (~5 seconds of speech), Scribe:
 
 1. records the microphone,
 2. sends the audio to **your own server** (any Linux box, NAS or PC with Docker),
@@ -57,7 +57,7 @@ irm https://raw.githubusercontent.com/diegosg-dev/vozlab/main/installer/deploy.p
 
 This works **even with Smart App Control enabled** (it runs the app with your
 signed Python, not an unsigned `.exe`), verifies the download checksum, creates a
-Start-menu shortcut and starts VozLab. No Python yet? The script tells you the
+Start-menu shortcut and starts Scribe. No Python yet? The script tells you the
 exact `winget` command to install it.
 
 <details>
@@ -110,7 +110,7 @@ Token      : PASTE-THE-TOKEN-PRINTED-ABOVE
 
 ### Connect them
 
-Start VozLab from the Start menu. The first-run wizard asks for three things:
+Launch it from the Start menu. The first-run wizard asks for three things:
 
 | Step | What to enter |
 |---|---|
@@ -154,7 +154,7 @@ Then hold your key, speak, release — the words appear where your cursor is.
 | 🔑 **Secrets stay secret** | The token is encrypted with Windows DPAPI, and each device can be given its own revocable token. Optional HTTPS with a **pinned** self-signed certificate. |
 | 🎭 **Speaks your register** | Formal in email, casual in Slack — chosen automatically from the app you are typing into. |
 | 📚 **Knows your names** | Add your name, company and product terms once: Whisper gets them right, every time. |
-| 🔎 **Finds itself** | *Find my server* broadcasts a probe and lists VozLab servers on your network. |
+| 🔎 **Finds itself** | *Find my server* broadcasts a probe and lists Scribe servers on your network. |
 | 📋 **Clipboard-safe** | Pastes with Ctrl+V and restores whatever you had copied. |
 | 🔁 **Easy updates** | `update.ps1` on the client, `docker compose pull` on the server, or the in-app update check. |
 | 🐳 **Runs anywhere** | Server is a Docker image: NVIDIA GPU, CPU-only, NAS, or Raspberry Pi (arm64 image coming). |
@@ -168,7 +168,7 @@ Then hold your key, speak, release — the words appear where your cursor is.
 ```
         your laptop (Windows)                      your server (Docker, on your LAN)
  ┌──────────────────────────────────┐      ┌────────────────────────────────────────────┐
- │  VozLab tray app                 │      │  VozLab server                             │
+ │  Scribe tray app                 │      │  Scribe server                             │
  │                                  │      │                                            │
  │  hold right Ctrl ──► record mic  │      │  1. Whisper (GPU or CPU)  speech → text    │
  │        │                         │      │  2. Silero VAD trims the silence           │
@@ -219,7 +219,7 @@ more accurate than `small` **if you only dictate English**. See
 
 ## Privacy & security
 
-VozLab was built privacy-first, and this is the complete list of what happens to
+Scribe was built privacy-first, and this is the complete list of what happens to
 your data:
 
 - **Audio** is recorded in memory, sent over your LAN to your server, transcribed

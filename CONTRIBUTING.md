@@ -1,4 +1,4 @@
-# Contributing to VozLab
+# Contributing to Scribe
 
 Thanks for helping! Bug reports, docs fixes, translations and code are all
 welcome.

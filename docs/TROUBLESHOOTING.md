@@ -11,7 +11,7 @@ Enable **Debug logging** in Settings for per-keystroke detail.
    global hotkeys — try the tray menu → **Dictate (toggle)**.
 4. If you run other automation tools, they may capture the key first; try another
    key (e.g. right Shift or F8).
-5. Run VozLab once **as administrator** to confirm it's a permissions issue.
+5. Run Scribe once **as administrator** to confirm it's a permissions issue.
 
 Debug tip (development installs): this prints every key the hook sees —
 
@@ -48,7 +48,7 @@ Rotating the token server-side requires updating every client.
 - Check the server log line: `loaded 'small' on cuda` (fast) vs `on cpu` (slow).
 - CPU mode: expect 5–10× slower. Use `small.en` instead of `small`, or a smaller
   cleanup model (`llama3.2:3b`), or disable cleanup.
-- The first request after a restart is slower (models load). VozLab preloads
+- The first request after a restart is slower (models load). Scribe preloads
   Whisper at startup and keeps the cleanup model resident.
 
 ## Text pastes into the wrong place / doesn't paste
@@ -101,7 +101,7 @@ There is **no bypass** — SAC only allows apps with a valid signature. Pick one
    powershell -ExecutionPolicy Bypass -File tools\install_from_source.ps1
    ```
 
-   This creates a `.venv`, installs the dependencies, adds a **VozLab** Start-menu
+   This creates a `.venv`, installs the dependencies, adds a **Scribe** Start-menu
    shortcut and launches the app. It behaves exactly like the installed build.
 
 2. **Turn Smart App Control off** — Settings → Privacy & security → Windows

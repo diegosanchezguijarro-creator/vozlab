@@ -1,4 +1,4 @@
-# VozLab
+# Scribe
 
 **Local, private voice dictation for Windows.** Hold a key, speak, release — your
 words appear in whatever app you're using, formatted. Speech recognition and text
@@ -6,7 +6,7 @@ cleanup run on **your own machine**. No cloud, no subscription, no account, and 
 audio leaving your network.
 
 <p align="center">
-  <img src="images/demo.gif" width="432" alt="VozLab status pill: listening, transcribing, done">
+  <img src="images/demo.gif" width="432" alt="Scribe status pill: listening, transcribing, done">
 </p>
 
 <div class="grid cards" markdown>
@@ -17,7 +17,7 @@ audio leaving your network.
 - :material-server: **[Set up the server](SERVER.md)** — one command on any machine
   with Docker.
 
-- :material-shield-lock: **[How private is it?](PRIVACY.md)** — everything VozLab
+- :material-shield-lock: **[How private is it?](PRIVACY.md)** — everything Scribe
   stores and sends, plus how to verify it yourself.
 
 - :material-speedometer: **[Models & speed](MODELS.md)** — pick a model for your

@@ -1,4 +1,4 @@
-"""VozLab application: tray icon + hotkey + recorder + overlay, all wired up."""
+"""Scribe application: tray icon + hotkey + recorder + overlay, all wired up."""
 
 import os
 import queue
@@ -11,7 +11,7 @@ import customtkinter as ctk
 import keyboard
 import pyperclip
 
-from . import APP_NAME, VERSION
+from . import APP_NAME, DISPLAY_NAME, VERSION
 from . import (audio, config as cfgmod, hotkeys, i18n, log, platform_info, profiles,
                tray, updater)
 from .api import ApiError, VozLabAPI
@@ -125,7 +125,7 @@ class VozLabApp:
 
     # -- startup -------------------------------------------------------------
     def run(self) -> None:
-        log.log(f"{APP_NAME} {VERSION} starting (config: {cfgmod.config_path()})")
+        log.log(f"{DISPLAY_NAME} {VERSION} starting (config: {cfgmod.config_path()})")
         self.root.after(40, self._pump)
         tray.TrayIcon.run_in_thread(self.tray)
         self.hotkeys.start()
@@ -527,7 +527,7 @@ class VozLabApp:
 def main() -> None:
     log.setup(cfgmod.load().get("debug", False))   # must run before any output
     if "--version" in sys.argv:
-        print(f"{APP_NAME} {VERSION}")
+        print(f"{DISPLAY_NAME} {VERSION}")
         return
     app = VozLabApp()
     try:

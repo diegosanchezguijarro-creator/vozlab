@@ -1,6 +1,6 @@
 # Architecture
 
-VozLab is two programs that talk over your LAN: a Windows tray app and a Docker
+Scribe is two programs that talk over your LAN: a Windows tray app and a Docker
 server. Nothing is centralised, nothing phones home.
 
 ```

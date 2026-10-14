@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VozLab server installer — one command to a working local dictation server.
+# Scribe server installer — one command to a working local dictation server.
 #
 #   bash install.sh                     # build from this checkout (auto GPU/CPU)
 #   bash install.sh --with-ai           # published image + Ollama + model (easiest)
@@ -7,7 +7,7 @@
 #   bash install.sh --tls               # also generate a certificate and use HTTPS
 #   VOZLAB_VERSION=1.2.0 bash install.sh --with-ai
 #
-# Prints the URL and token to paste into the VozLab desktop app.
+# Prints the URL and token to paste into the Scribe desktop app.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -72,9 +72,9 @@ if ! chown -R 1000:1000 data 2>/dev/null; then
   warn "Could not chown ./data to 1000:1000 — if the container cannot write, run: sudo chown -R 1000:1000 data"
 fi
 if $WITH_AI; then
-  say "Starting VozLab + Ollama (first run downloads images and the model, ~5 GB)"
+  say "Starting Scribe + Ollama (first run downloads images and the model, ~5 GB)"
 else
-  say "Building and starting VozLab from this checkout"
+  say "Building and starting Scribe from this checkout"
 fi
 "${COMPOSE[@]}" up -d --build 2>/dev/null || "${COMPOSE[@]}" up -d
 
@@ -135,10 +135,10 @@ cat <<EOF
 
 $(printf '\033[1;32m')
   ┌──────────────────────────────────────────────────────────────┐
-  │  VozLab server is running!                                   │
+  │  Scribe server is running!                                   │
   └──────────────────────────────────────────────────────────────┘
 
-  In the VozLab app, connect to:
+  In the Scribe app, connect to:
 
       Server URL : ${SCHEME}://${LAN_IP:-<this-machine-IP>}:8092
       Token      : ${TOKEN:-see server/data/config.json}

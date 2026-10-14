@@ -1,6 +1,6 @@
 """Platform differences, in one place.
 
-VozLab's supported client is Windows. The app runs on macOS and Linux for
+Scribe's supported client is Windows. The app runs on macOS and Linux for
 development and for the parts that do not need a global keyboard hook, so the
 handful of places that genuinely differ live here instead of being scattered
 through the code as `sys.platform` checks.

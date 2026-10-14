@@ -1,6 +1,6 @@
 # Privacy & security
 
-VozLab is designed so that **your voice never leaves your network**. This page
+Scribe is designed so that **your voice never leaves your network**. This page
 documents exactly what happens to your data, and what you can verify yourself.
 
 ## What is collected
@@ -15,7 +15,7 @@ The app makes exactly two kinds of network request:
 | `GET /health`, `GET /status`, `POST /transcribe` | normal use | **your** server, on your LAN |
 | `GET /releases/latest` | only if you enable *Settings → System → Check for updates*, or press *Check now* | `api.github.com` (public version number) |
 
-The second one is **off by default**. With it off, the only packets VozLab sends
+The second one is **off by default**. With it off, the only packets Scribe sends
 are to the IP address you typed in the wizard.
 
 `deploy.ps1` / `update.ps1` also contact GitHub, but only when you run them, to
@@ -109,7 +109,7 @@ something different. CI enforces this:
 Every release also publishes an **SBOM** (`vozlab-server-<version>.spdx.json`)
 alongside the binaries.
 
-## Threat model (what VozLab does and does not protect against)
+## Threat model (what Scribe does and does not protect against)
 
 | Scenario | Covered? |
 |---|---|

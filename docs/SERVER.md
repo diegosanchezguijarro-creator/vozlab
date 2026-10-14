@@ -1,6 +1,6 @@
 # Server setup
 
-VozLab's server does the heavy lifting: speech recognition (Whisper) and the
+Scribe's server does the heavy lifting: speech recognition (Whisper) and the
 optional text cleanup (a local LLM). It runs in Docker on any machine on your
 LAN — a gaming PC, a home server, a NAS, a mini-PC.
 
@@ -91,7 +91,7 @@ starts cleanly instead of failing on a device request.
 ## Connecting the app
 
 1. Find the server's LAN IP: `hostname -I` (e.g. `192.168.0.23`)
-2. In the VozLab app: **Settings → Server URL** = `http://192.168.0.23:8092`
+2. In the Scribe app: **Settings → Server URL** = `http://192.168.0.23:8092`
 3. **Token** = the one printed in the logs / by `install.sh`
 4. Press **Test connection** — you should see the model and device.
 
@@ -114,7 +114,7 @@ Restart after editing: `docker compose restart`.
 ### The cleanup LLM (optional but recommended)
 
 The cleanup pass is what makes dictation feel like writing instead of
-transcribing. VozLab talks to any OpenAI-compatible `/api/chat` endpoint —
+transcribing. Scribe talks to any OpenAI-compatible `/api/chat` endpoint —
 [Ollama](https://ollama.com) is the easiest:
 
 ```bash

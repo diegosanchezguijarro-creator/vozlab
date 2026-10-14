@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the VozLab app icon (assets/icon.ico + icon.png).
+"""Generate the Scribe app icon (assets/icon.ico + icon.png).
 
     pip install pillow
     python tools/make_icon.py

@@ -16,7 +16,7 @@ import webbrowser
 
 import customtkinter as ctk
 
-from .. import APP_NAME, VERSION
+from .. import DISPLAY_NAME, VERSION
 from .. import audio, config as cfgmod, diagnostics, log
 from .. import hotkeys as hotkeys_mod
 from ..api import ApiError, VozLabAPI
@@ -76,7 +76,7 @@ class SettingsWindow:
         tr = app.tr
 
         self.win = ctk.CTkToplevel(app.root)
-        self.win.title(f"{APP_NAME} — {tr('settings_title')}")
+        self.win.title(tr("settings_title"))
         self.win.geometry("760x760")
         self.win.minsize(720, 600)
 
@@ -86,7 +86,7 @@ class SettingsWindow:
 
         left = ctk.CTkFrame(head, fg_color="transparent")
         left.pack(side="left")
-        ctk.CTkLabel(left, text=APP_NAME, font=theme.font(22, "bold")).pack(anchor="w")
+        ctk.CTkLabel(left, text=DISPLAY_NAME, font=theme.font(22, "bold")).pack(anchor="w")
         ctk.CTkLabel(left, text=f"v{VERSION} · 100% local", font=theme.font(12),
                      text_color=theme.TEXT_MUTED).pack(anchor="w")
 

@@ -31,7 +31,7 @@ body:
     id: client-version
     attributes:
       label: Client version
-      description: Settings → System, or the About window (tray → About VozLab).
+      description: Settings → System, or the About window (tray → About Scribe).
       placeholder: v1.1.2
     validations:
       required: true

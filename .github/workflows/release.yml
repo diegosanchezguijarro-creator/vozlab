@@ -91,7 +91,7 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: VozLab ${{ steps.ver.outputs.version }}
+          name: Scribe ${{ steps.ver.outputs.version }}
           draft: false
           generate_release_notes: true
           files: |

@@ -5,7 +5,7 @@ contact_links:
     about: Installation problems, "cannot reach the server", microphone issues…
   - name: Privacy & security model
     url: https://github.com/diegosg-dev/vozlab/blob/main/docs/PRIVACY.md
-    about: What VozLab stores, what it sends, and how to verify it.
+    about: What Scribe stores, what it sends, and how to verify it.
   - name: Report a security issue privately
     url: https://github.com/diegosg-dev/vozlab/security/advisories/new
     about: Please don't open a public issue for vulnerabilities.

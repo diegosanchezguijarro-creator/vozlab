@@ -1,6 +1,6 @@
 # Models & performance
 
-VozLab uses two models: one for speech-to-text (Whisper, inside the server
+Scribe uses two models: one for speech-to-text (Whisper, inside the server
 container) and one for text cleanup (any Ollama model).
 
 ## Speech recognition — Whisper

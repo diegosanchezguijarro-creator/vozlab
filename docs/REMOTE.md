@@ -1,4 +1,4 @@
-# Using VozLab away from home
+# Using Scribe away from home
 
 The server speaks plain HTTP and is meant for a trusted LAN. To dictate from a
 café, a hotel or your phone hotspot, put the connection inside a VPN instead of
@@ -17,7 +17,7 @@ tailscale ip -4            # e.g. 100.101.102.103
 ```
 
 Install the Tailscale client on the Windows laptop, log in with the same account,
-then in VozLab: **Settings → Connection → Server URL** = `http://100.101.102.103:8092`.
+then in Scribe: **Settings → Connection → Server URL** = `http://100.101.102.103:8092`.
 
 That's it — the dictation path now works over the tailnet, including from a phone
 hotspot.

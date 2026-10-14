@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render every VozLab window with demo data.
+"""Render every Scribe window with demo data.
 
 Useful for developing/screenshotting the UI without a Windows machine:
 
@@ -36,7 +36,7 @@ DEMO_CONFIG = {
     "restore_clipboard": True, "show_pill": True, "pill_position": "bottom-center",
     "ui_language": "auto", "launch_at_login": True, "debug": False,
     "style": "default", "per_app_profiles": True,
-    "vocabulary": ["VozLab", "Diego", "qwen2.5"],
+    "vocabulary": ["Scribe", "Diego", "qwen2.5"],
     "first_run_done": True,
 }
 
@@ -44,7 +44,7 @@ DEMO_CONFIG = {
 class DemoServerAPI:
     """Stands in for a live server when rendering screenshots.
 
-    The preview runs on a workstation with no VozLab server (or, worse, with one
+    The preview runs on a workstation with no Scribe server (or, worse, with one
     that answers 401 to the demo token), which used to put a red "token was
     rejected" banner in every screenshot. This returns a realistic connected
     server instead, so the images show the product working.
@@ -71,7 +71,7 @@ class DemoServerAPI:
         }
 
     def get_settings(self):
-        return {"vocabulary": ["VozLab", "Diego"], "styles": ["bullets", "casual", "concise",
+        return {"vocabulary": ["Scribe", "Diego"], "styles": ["bullets", "casual", "concise",
                                                              "default", "formal"]}
 
     def logs(self, lines: int = 100):
@@ -100,7 +100,7 @@ class DemoServerAPI:
 
     def self_test(self):
         return {"ok": True, "text": "If you can read this, the server works.",
-                "raw_text": "VozLab self test. If you can read this, the server works.",
+                "raw_text": "Scribe self test. If you can read this, the server works.",
                 "language": "en", "cleanup_error": None, "device": "cuda",
                 "timings": {"whisper_s": 0.21, "cleanup_s": 0.24, "total_s": 0.45}}
 
@@ -191,7 +191,7 @@ def main() -> None:
     take_shots = "--shot" in sys.argv
 
     app = FakeApp(lang)
-    print(f"Rendering VozLab UI (language: {app.tr.language})")
+    print(f"Rendering Scribe UI (language: {app.tr.language})")
     shot = lambda name: screenshot(name, prefix) if take_shots else None
 
     # 1. settings window — one screenshot per tab

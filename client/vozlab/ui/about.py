@@ -2,7 +2,7 @@
 
 import customtkinter as ctk
 
-from .. import APP_NAME, VERSION
+from .. import DISPLAY_NAME, VERSION
 from .. import config as cfgmod
 from .. import hotkeys as hotkeys_mod
 from . import theme
@@ -21,7 +21,7 @@ class AboutWindow:
         self.win.attributes("-topmost", True)
 
         ctk.CTkLabel(self.win, text="🎙️", font=theme.font(46)).pack(pady=(34, 6))
-        ctk.CTkLabel(self.win, text=APP_NAME, font=theme.font(24, "bold")).pack()
+        ctk.CTkLabel(self.win, text=DISPLAY_NAME, font=theme.font(24, "bold")).pack()
         ctk.CTkLabel(self.win, text=f"v{VERSION}", font=theme.font(12),
                      text_color=theme.TEXT_MUTED).pack(pady=(2, 0))
         ctk.CTkLabel(self.win, text=tr("about_tagline"), font=theme.font(12),

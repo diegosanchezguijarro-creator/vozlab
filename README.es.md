@@ -1,4 +1,4 @@
-# VozLab
+# Scribe
 
 **Dictado por voz local y privado para Windows.** Mantén una tecla, habla, suéltala
 — tus palabras aparecen en la aplicación que estés usando, ya formateadas. El
@@ -6,7 +6,7 @@ reconocimiento de voz y el arreglo del texto se ejecutan en **tu propia máquina
 Sin nube, sin suscripción, sin cuenta, y sin que tu voz salga de tu red.
 
 <p align="center">
-  <img src="docs/images/demo.gif" width="432" alt="Píldora de estado de VozLab: escuchando, transcribiendo, listo">
+  <img src="docs/images/demo.gif" width="432" alt="Píldora de estado de Scribe: escuchando, transcribiendo, listo">
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@ Sin nube, sin suscripción, sin cuenta, y sin que tu voz salga de tu red.
 
 ## Qué hace
 
-Mantienes una tecla pulsada mientras hablas (~5 segundos), y VozLab:
+Mantienes una tecla pulsada mientras hablas (~5 segundos), y Scribe:
 
 1. graba el micrófono,
 2. envía el audio a **tu propio servidor** (cualquier equipo Linux, NAS o PC con Docker),
@@ -48,7 +48,7 @@ irm https://raw.githubusercontent.com/diegosg-dev/vozlab/main/installer/deploy.p
 
 Funciona **incluso con Smart App Control activado** (la app se ejecuta con tu
 Python firmado, no con un `.exe` sin firmar), verifica el checksum de la descarga,
-crea el acceso en el menú Inicio y arranca VozLab. ¿No tienes Python? El script te
+crea el acceso en el menú Inicio y arranca Scribe. ¿No tienes Python? El script te
 da el comando `winget` exacto para instalarlo.
 
 ### El servidor (5 minutos, un comando)
@@ -75,7 +75,7 @@ Token      : PASTE-THE-TOKEN-PRINTED-ABOVE
 
 ### Conéctalos
 
-Abre VozLab desde el menú Inicio. El asistente inicial te pide tres cosas: la URL
+Abre Scribe desde el menú Inicio. El asistente inicial te pide tres cosas: la URL
 y el token del servidor, la tecla de dictado (p. ej. **Ctrl derecho**) y una
 prueba del micrófono. Después: mantén la tecla, habla, suelta.
 
@@ -102,7 +102,7 @@ prueba del micrófono. Después: mantén la tecla, habla, suelta.
 - 🔑 El token se guarda cifrado con DPAPI (Windows) y cada dispositivo puede tener su propio token revocable
 - 🎭 **Habla como tú**: formal en el correo, informal en Slack, elegido según la app en la que escribes
 - 📚 **Conoce tus nombres**: añade tu nombre, tu empresa y tus productos una vez y Whisper los acierta siempre
-- 🔎 **Se encuentra solo**: *Buscar mi servidor* localiza servidores VozLab en tu red
+- 🔎 **Se encuentra solo**: *Buscar mi servidor* localiza servidores Scribe en tu red
 - 🔐 HTTPS opcional con certificado **fijado** (autofirmado)
 - 📋 Pegado seguro: usa Ctrl+V y restaura tu portapapeles
 - 🐳 Servidor en Docker: GPU NVIDIA, solo CPU, NAS o Raspberry Pi

@@ -1,8 +1,9 @@
 """Floating status pill — rounded, animated, always on top.
 
 Raw Tk canvas (not CustomTkinter) so it can be borderless with rounded corners
-and animated at 25 fps. On Windows `-transparentcolor` makes the corners really
-transparent; elsewhere it degrades to a dark rectangle.
+and animated at 25 fps. On Windows `-transparentcolor` keys out the corners and
+`-alpha` makes the panel translucent glass, so the desktop shows through it;
+elsewhere it degrades to a plain dark rectangle.
 """
 
 import time
@@ -17,6 +18,10 @@ TEXT_SIZE = 12
 # Tk's default scaling is 96 dpi / 72 points; everything below is laid out in
 # these "design pixels" and multiplied by the live DPI factor at draw time.
 BASE_DPI = 96.0
+# The resting opacity of the whole pill: below 1.0 the desktop shows through the
+# panel (translucent glass). Tk only offers uniform window alpha, so the label
+# and dot fade with it — keep this high enough to stay readable.
+REST_ALPHA = 0.84
 
 
 def _ellipsize(text: str, max_px: int, measure) -> str:
@@ -106,7 +111,7 @@ class PillOverlay:
             self.window.deiconify()
             self.window.lift()
             self._visible = True
-            self._fade(0.96)
+            self._fade(REST_ALPHA)
         self._start_animation()
         if auto_hide_ms:
             self._hide_job = self.root.after(auto_hide_ms, self.hide)
@@ -267,7 +272,7 @@ class PillOverlay:
 
         def step():
             delta = 0.12 if target > self._alpha else -0.12
-            self._alpha = max(0.0, min(0.96, self._alpha + delta))
+            self._alpha = max(0.0, min(REST_ALPHA, self._alpha + delta))
             try:
                 self.window.attributes("-alpha", self._alpha)
             except tk.TclError:

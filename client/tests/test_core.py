@@ -391,7 +391,7 @@ def test_diagnostics_write_report(tmp_path):
     path = diagnostics.write_report(str(tmp_path), {"token": "x", "beeps": False})
     assert os.path.exists(path)
     content = open(path, encoding="utf-8").read()
-    assert "VozLab diagnostics" in content
+    assert "Scribe diagnostics" in content
     assert "x" not in content.split("token")[1].split("\n")[0]  # token value redacted
 
 

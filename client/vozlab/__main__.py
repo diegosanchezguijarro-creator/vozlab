@@ -1,9 +1,9 @@
 import sys
 
-from . import APP_NAME, VERSION
+from . import DISPLAY_NAME, VERSION
 
 if "--version" in sys.argv:
-    print(f"{APP_NAME} {VERSION}")
+    print(f"{DISPLAY_NAME} {VERSION}")
     sys.exit(0)
 
 from .app import main  # noqa: E402

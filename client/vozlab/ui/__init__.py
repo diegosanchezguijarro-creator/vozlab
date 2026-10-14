@@ -1,3 +1,3 @@
-"""VozLab UI package (CustomTkinter)."""
+"""Scribe UI package (CustomTkinter)."""
 
 from . import theme  # noqa: F401

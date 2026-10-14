@@ -54,7 +54,7 @@ Linux/macOS for development, but text insertion uses Windows-specific behaviour
 
 ### How do I uninstall it?
 
-- **Client**: `Settings → Apps → VozLab → Uninstall` (installer builds), or delete
+- **Client**: `Settings → Apps → Scribe → Uninstall` (installer builds), or delete
   `%LOCALAPPDATA%\Programs\VozLab` and `%APPDATA%\VozLab` (source installs), plus
   the Start-menu shortcut.
 - **Server**: `docker compose down` in `server/`, then delete the folder. Add
@@ -63,7 +63,7 @@ Linux/macOS for development, but text insertion uses Windows-specific behaviour
 ### Can I use a cloud API instead of local models?
 
 You could — the server is a thin wrapper — but that defeats the purpose: your
-audio and text would leave your machine. VozLab will stay local-only by design.
+audio and text would leave your machine. Scribe will stay local-only by design.
 
 ### Is there a phone app?
 
@@ -73,7 +73,7 @@ though.
 
 ### Why is the installer unsigned? Windows blocked it!
 
-Code signing costs money (a certificate plus identity validation), so VozLab ships
+Code signing costs money (a certificate plus identity validation), so Scribe ships
 a **Smart-App-Control-safe** installer instead: `deploy.ps1` runs the app with
 your signed Python rather than an unsigned `.exe`. Use the one-liner from the
 README; it works even with SAC enabled.

@@ -1,4 +1,4 @@
-"""Find VozLab servers on the local network.
+"""Find Scribe servers on the local network.
 
 The server answers a UDP probe on port 8093 with its name, version and HTTP
 port — no token, no settings. The app broadcasts the same probe and lists the

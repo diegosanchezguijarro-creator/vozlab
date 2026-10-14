@@ -1,6 +1,6 @@
 # Windows app
 
-The VozLab app lives in your tray and turns your microphone into text in any
+The Scribe app lives in your tray and turns your microphone into text in any
 application: hold a key, speak, release.
 
 ## Install
@@ -8,7 +8,7 @@ application: hold a key, speak, release.
 1. Download `VozLab-Setup-x.y.z.exe` from the repository's **Releases** page.
 2. Run it. It installs per-user (no administrator prompt) to
    `%LOCALAPPDATA%\Programs\VozLab`.
-3. Optional: tick **Start VozLab automatically when I sign in**.
+3. Optional: tick **Start Scribe automatically when I sign in**.
 
 > Windows SmartScreen will warn about an unknown publisher on first run
 > (the app is not code-signed): **More info → Run anyway**.
@@ -80,7 +80,7 @@ that adds or drops words, so a wrong profile can never corrupt a dictation.
 ### Server
 | Setting | Notes |
 |---|---|
-| Find my server | broadcasts a UDP probe and lists VozLab servers on your network (no IP hunting) |
+| Find my server | broadcasts a UDP probe and lists Scribe servers on your network (no IP hunting) |
 | Server URL / Token | where your server lives; use **Test connection**; the token is stored encrypted |
 | Pinned certificate | with `https://` the app remembers the server certificate on first connect; **Re-pin** after re-installing the server, **Forget** to clear it |
 | Speech model | `tiny` → `large-v3`; changing it reloads Whisper in the background |
@@ -120,7 +120,7 @@ folder**).
 - The app pastes with `Ctrl+V`. In apps where `Ctrl+V` is remapped, text may not
   land — turn off *Restore clipboard after pasting* if the paste gets mangled.
 - Windows can block global hooks for processes running as a different user.
-  If the hotkey does nothing, try launching VozLab as administrator once.
+  If the hotkey does nothing, try launching Scribe as administrator once.
 
 ## Updating
 
@@ -129,5 +129,5 @@ logs are preserved (they live in `%APPDATA%\VozLab`, not in the install folder).
 
 ## Uninstalling
 
-Windows *Settings → Apps → VozLab → Uninstall* (or the Start-menu uninstaller).
+Windows *Settings → Apps → Scribe → Uninstall* (or the Start-menu uninstaller).
 Your settings file is left behind; delete `%APPDATA%\VozLab` if you want it gone.

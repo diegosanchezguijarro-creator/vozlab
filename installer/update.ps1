@@ -1,5 +1,5 @@
 <#
-    VozLab updater — checks GitHub for a newer release and installs it in place.
+    Scribe updater — checks GitHub for a newer release and installs it in place.
 
         powershell -ExecutionPolicy Bypass -File update.ps1
         powershell -ExecutionPolicy Bypass -File update.ps1 -CheckOnly
@@ -25,10 +25,10 @@ function Fail($m) { Write-Host "ERROR: $m" -ForegroundColor Red; exit 1 }
 
 $versionFile = Join-Path $InstallDir 'version.txt'
 if (-not (Test-Path $versionFile)) {
-    Fail "no VozLab installation found in $InstallDir (expected version.txt). Install it first with deploy.ps1."
+    Fail "no Scribe installation found in $InstallDir (expected version.txt). Install it first with deploy.ps1."
 }
 $current = (Get-Content $versionFile -Raw).Trim()
-Info "VozLab installed: $current"
+Info "Scribe installed: $current"
 
 Info "Checking GitHub for the latest release..."
 try {

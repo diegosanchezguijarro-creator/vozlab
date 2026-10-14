@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest something that would make VozLab better
+description: Suggest something that would make Scribe better
 title: "[feat] "
 labels: ["enhancement"]
 body:
@@ -38,5 +38,5 @@ body:
     attributes:
       label: Keep in mind
       options:
-        - label: This keeps VozLab 100% local (no cloud APIs, no telemetry)
+        - label: This keeps Scribe 100% local (no cloud APIs, no telemetry)
           required: true

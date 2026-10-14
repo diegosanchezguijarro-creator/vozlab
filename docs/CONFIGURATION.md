@@ -119,7 +119,7 @@ services:
 
 The server preloads Whisper at startup and keeps the cleanup model in memory
 (`keep_alive: -1`), so the first dictation after a restart is as fast as the
-hundredth. Ollama's own `OLLAMA_KEEP_ALIVE` is not used by VozLab.
+hundredth. Ollama's own `OLLAMA_KEEP_ALIVE` is not used by Scribe.
 
 ### CPU-only tuning
 

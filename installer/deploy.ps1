@@ -1,5 +1,5 @@
 <#
-    VozLab installer — works even with Windows Smart App Control enabled.
+    Scribe installer — works even with Windows Smart App Control enabled.
 
     It does NOT run an unsigned .exe: it downloads the release source, verifies
     the SHA256, installs the Python dependencies into a private virtual
@@ -18,7 +18,7 @@
         -Repo <owner/name>      GitHub repository (default: the official one)
         -Version <x.y.z>        Install a specific version instead of the latest
         -InstallDir <path>      Where to install (default %LOCALAPPDATA%\Programs\VozLab)
-        -Autostart              Start VozLab when you sign in
+        -Autostart              Start Scribe when you sign in
         -NoShortcut             Do not create Start-menu/desktop shortcuts
         -NoDesktopIcon          Only create the Start-menu shortcut
         -NoLaunch               Install but do not start the app
@@ -85,7 +85,7 @@ function Resolve-Release {
 
 # ---------------------------------------------------------------- preflight --
 Write-Host ""
-Write-Host "  VozLab installer" -ForegroundColor White
+Write-Host "  Scribe installer" -ForegroundColor White
 Write-Host "  ---------------" -ForegroundColor DarkGray
 
 $python = Get-PythonExe
@@ -103,7 +103,7 @@ Write-Host "  python  : $(& $python --version)"
 if ($InstallDir -eq (Join-Path $env:LOCALAPPDATA 'Programs\VozLab') -and
     (Test-Path (Join-Path $InstallDir 'VozLab.exe'))) {
     Write-Host ""
-    Write-Host "  note: an installer-based VozLab exists in the same folder." -ForegroundColor Yellow
+    Write-Host "  note: an installer-based Scribe exists in the same folder." -ForegroundColor Yellow
     Write-Host "        Uninstall it from Settings > Apps to avoid two copies listening" -ForegroundColor DarkGray
     Write-Host "        for the same dictation key." -ForegroundColor DarkGray
 }
@@ -114,7 +114,7 @@ $ver = $release.Version
 $srcName = "VozLab-$ver-src.zip"
 $baseUrl = "https://github.com/$Repo/releases/download/$($release.Tag)"
 
-Write-Step "Downloading VozLab $ver"
+Write-Step "Downloading Scribe $ver"
 $tmp = Join-Path $env:TEMP ("vozlab-install-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 $zipPath = Join-Path $tmp $srcName
@@ -205,7 +205,7 @@ if (-not $NoShortcut) {
         $link.Arguments = '"' + $entryScript + '"'
         $link.WorkingDirectory = (Join-Path $appDir 'client')
         if (Test-Path $iconPath) { $link.IconLocation = $iconPath }
-        $link.Description = 'VozLab — local voice dictation'
+        $link.Description = 'Scribe — local voice dictation'
         $link.Save()
         Write-Host "  $path"
     }
@@ -221,7 +221,7 @@ if ($Autostart) {
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 
 Write-Host ""
-Write-Host "  VozLab $ver installed" -ForegroundColor Green
+Write-Host "  Scribe $ver installed" -ForegroundColor Green
 Write-Host "  app     : $appDir\client"
 Write-Host "  settings: $env:APPDATA\VozLab\config.json"
 Write-Host "  logs    : $env:APPDATA\VozLab\vozlab.log"
@@ -229,7 +229,7 @@ Write-Host ""
 Write-Host "  Update later with:  powershell -ExecutionPolicy Bypass -File `"$InstallDir\update.ps1`""
 
 if (-not $NoLaunch) {
-    Write-Step "Starting VozLab"
+    Write-Step "Starting Scribe"
     Start-Process -FilePath $venvPythonW -ArgumentList ('"' + $entryScript + '"') -WorkingDirectory (Join-Path $appDir 'client')
     Write-Host "  look for the microphone icon in the system tray"
 }

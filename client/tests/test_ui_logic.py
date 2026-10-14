@@ -227,3 +227,17 @@ def test_ellipsize_never_overflows_an_empty_budget():
 
     assert pill._ellipsize("hello", 0, lambda s: len(s) * 7) == ""
     assert pill._ellipsize("hello", 3, lambda s: len(s) * 7) == ""
+
+
+# --------------------------------------------------------------- branding --
+
+
+def test_rename_keeps_stable_identifiers():
+    """The product name may change; these must not, or users lose their setup."""
+    from vozlab import APP_ID, APP_NAME, DISPLAY_NAME
+    from vozlab import secretstore
+
+    assert DISPLAY_NAME == "Scribe"
+    assert APP_NAME == "VozLab"                            # %APPDATA%\VozLab, log, Run key
+    assert APP_ID == "vozlab"
+    assert secretstore._ENTROPY == b"vozlab-config-v1"     # DPAPI entropy (decrypts the token)

@@ -12,7 +12,7 @@ import platform
 import re
 import sys
 
-from . import VERSION
+from . import DISPLAY_NAME, VERSION
 from . import platform_info
 
 MAX_LOG_LINES = 200
@@ -55,7 +55,7 @@ def build_report(cfg: dict, log_path: str = "", server_health: dict | None = Non
     """A plain-text report with versions, environment, settings and logs."""
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     lines = [
-        f"VozLab diagnostics — {now}",
+        f"{DISPLAY_NAME} diagnostics — {now}",
         "=" * 60,
         "",
         f"Client version : {VERSION}",

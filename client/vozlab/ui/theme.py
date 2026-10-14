@@ -1,4 +1,4 @@
-"""VozLab design system — colors, spacing, fonts, and CustomTkinter setup.
+"""Scribe design system — colors, spacing, fonts, and CustomTkinter setup.
 
 Two palettes (dark / light) live here. `apply(mode)` switches the *live* module
 constants, so any window built afterwards uses the new colors; long-lived
@@ -148,7 +148,7 @@ def apply(mode: str = "dark") -> str:
 
 
 def setup(mode: str = "dark") -> None:
-    """Initialise CustomTkinter with VozLab's look."""
+    """Initialise CustomTkinter with Scribe's look."""
     ctk.set_default_color_theme("blue")
     apply(mode)
 
