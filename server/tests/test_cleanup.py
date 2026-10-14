@@ -112,6 +112,17 @@ def test_prompt_forbids_conversation():
     assert "never translate" in prompt
 
 
+def test_prompt_allows_swearing():
+    """Cleanup must never censor: users dictate curse words on purpose."""
+    prompt = DEFAULT_CLEANUP_PROMPT.lower()
+    assert "never censor" in prompt
+    # and an example, since small models follow examples better than rules
+    assert "fucking" in prompt
+
+    ok, reason = cleanup_ok("this is fucking broken", "This is fucking broken.")
+    assert ok, reason
+
+
 # ------------------------------------------------- styles & custom vocabulary --
 
 
