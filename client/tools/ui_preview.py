@@ -253,8 +253,7 @@ def main() -> None:
         app.root.after(1200, lambda: p.transcribing(app.tr("state_transcribing")))
         if take_shots:
             app.root.after(1800, lambda: shot("pill-transcribing"))
-        app.root.after(2400, lambda: p.show(
-            "Recuerdame llamar al cliente el jueves.", "done"))
+        app.root.after(2400, lambda: p.show(app.tr("state_done"), "done"))
         if take_shots:
             app.root.after(3000, lambda: shot("pill-done"))
         app.root.after(3600, p.destroy)

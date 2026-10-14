@@ -65,6 +65,10 @@ Settings → *Show floating status pill*. Position is controlled by
 `pill_position` in `%APPDATA%\VozLab\config.json`
 (`bottom-center`, `bottom-right`, `top-right`).
 
+If the pill looks off-centre or its text is cut off after moving between
+monitors with different display scaling, it is the DPI factor: update to the
+latest release, which lays the pill out from real font metrics.
+
 ## The text isn't what I said
 
 - Dictations are logged with both versions — open the log from the tray

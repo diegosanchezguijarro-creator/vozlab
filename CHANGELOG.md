@@ -3,6 +3,18 @@
 All notable changes to VozLab are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] — 2026-10-14
+
+### Fixed — the status pill on scaled displays
+- The floating pill is now sized from **real font metrics** (`tkinter.font`)
+  and the live DPI factor instead of a hard-coded `len(text) * 6.6` estimate.
+  On a laptop with display scaling above 100% the label overflowed the box and
+  the whole pill looked off-centre; it now fits and stays centred. Labels wider
+  than the pill are trimmed with `…` instead of being clipped.
+- The pill **no longer shows the transcribed words**. A successful dictation
+  shows a neutral "Done" confirmation, so your dictated text never appears on
+  screen (the full text is still pasted and kept on the clipboard).
+
 ## [1.4.0] — 2026-10-13
 
 **The rest of the roadmap: HTTPS you can actually use, per-app styles, custom

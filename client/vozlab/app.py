@@ -399,8 +399,8 @@ class VozLabApp:
         self.last_text = text
         self._paste_text(text)
         if self.overlay:
-            preview = text if len(text) <= 120 else text[:117] + "…"
-            self.overlay.show(f"{preview}", "done", auto_hide_ms=2500)
+            # confirmation only — the dictated words never appear on screen
+            self.overlay.show(self.tr("state_done"), "done", auto_hide_ms=1500)
 
     # -- output --------------------------------------------------------------
     def _paste_text(self, text: str) -> None:

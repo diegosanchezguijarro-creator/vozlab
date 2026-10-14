@@ -7,11 +7,28 @@ transparent; elsewhere it degrades to a dark rectangle.
 
 import time
 import tkinter as tk
+import tkinter.font as tkfont
 
 from . import theme
 
 FRAME_MS = 40
 BAR_COUNT = 4
+TEXT_SIZE = 12
+# Tk's default scaling is 96 dpi / 72 points; everything below is laid out in
+# these "design pixels" and multiplied by the live DPI factor at draw time.
+BASE_DPI = 96.0
+
+
+def _ellipsize(text: str, max_px: int, measure) -> str:
+    """Shrink `text` until `measure(text)` fits in `max_px` (adds … when cut)."""
+    if max_px <= 0:
+        return ""
+    if measure(text) <= max_px:
+        return text
+    out = text
+    while out and measure(out + "…") > max_px:
+        out = out[:-1]
+    return (out + "…") if out else ""
 
 
 def _rounded_rect(canvas: tk.Canvas, x1, y1, x2, y2, r, **kwargs):
@@ -27,6 +44,7 @@ def _rounded_rect(canvas: tk.Canvas, x1, y1, x2, y2, r, **kwargs):
 class PillOverlay:
     HEIGHT = 48
     MIN_WIDTH = 200
+    MIN_WIDTH_MINIMAL = 120
     MAX_WIDTH = 540
 
     def __init__(self, root: tk.Tk, cfg: dict):
@@ -35,6 +53,7 @@ class PillOverlay:
         self.style = cfg.get("pill_style", "full")       # full | minimal
         self._state = "info"
         self._text = ""
+        self._shown_text = ""
         self._visible = False
         self._alpha = 0.0
         self._fade_job = None
@@ -60,6 +79,10 @@ class PillOverlay:
                                 highlightthickness=0, bd=0)
         self.canvas.pack()
         self.canvas.bind("<Button-1>", lambda _e: self._clicked())
+        # real font metrics (and DPI) drive the layout, so the pill fits its text
+        # on a 4K scaling laptop exactly like on a 100% desktop monitor
+        self._font = tkfont.Font(family=theme.FONT_FAMILY, size=TEXT_SIZE,
+                                 weight="normal")
         self.window.withdraw()
 
     # -- public API ----------------------------------------------------------
@@ -113,14 +136,39 @@ class PillOverlay:
             pass
 
     # -- drawing -------------------------------------------------------------
+    def _unit(self) -> float:
+        """Pixels per design pixel (1.0 at 96 dpi, 1.5 at 150% scaling)."""
+        try:
+            scaling = float(self.window.tk.call("tk", "scaling"))
+        except Exception:  # noqa: BLE001 — never let a metrics error hide the pill
+            return 1.0
+        return min(3.0, max(1.0, scaling * 72.0 / BASE_DPI))
+
+    def _text_left(self, u: float) -> int:
+        """Where the label starts (after the dot, and the meter for `full`)."""
+        return int(round((38 if self.style == "minimal" else 81) * u))
+
+    def _text_pad(self, u: float) -> int:
+        return int(round((12 if self.style == "minimal" else 16) * u))
+
     def _measure(self) -> tuple[int, int]:
-        if self.style == "minimal":
-            # a dot and the words, nothing else
-            width = 16 + 10 + 14 + len(self._text) * 6.6
-            return int(max(120, min(self.MAX_WIDTH, width))), self.HEIGHT
-        width = 22 + 12 + 10 + (BAR_COUNT * 7 + 12) + 14 + len(self._text) * 6.6
-        width = int(max(self.MIN_WIDTH, min(self.MAX_WIDTH, width)))
-        return width, self.HEIGHT
+        u = self._unit()
+        text_left = self._text_left(u)
+        pad = self._text_pad(u)
+        min_width = int(round((self.MIN_WIDTH_MINIMAL if self.style == "minimal"
+                               else self.MIN_WIDTH) * u))
+        max_width = int(round(self.MAX_WIDTH * u))
+
+        text = self._display_text()
+        width = max(min_width, min(max_width, text_left + self._font.measure(text) + pad))
+        # the label is one line: trim it (with …) instead of letting it clip
+        self._shown_text = _ellipsize(text, width - text_left - pad, self._font.measure)
+        height = max(int(round(self.HEIGHT * u)),
+                     self._font.metrics("linespace") + int(round(12 * u)))
+        return width, height
+
+    def _display_text(self) -> str:
+        return self._text + self._elapsed_suffix()
 
     def _elapsed_suffix(self) -> str:
         """Show how long we have been listening (long notes need reassurance)."""
@@ -134,41 +182,45 @@ class PillOverlay:
         self.canvas.configure(width=w, height=h)
         self.canvas.delete("all")
 
+        u = self._unit()
+        cy = h / 2
+
         _rounded_rect(self.canvas, 1, 1, w - 1, h - 1, h / 2 - 1,
                       fill=theme.PILL_BG, outline=theme.PILL_BORDER, width=1)
 
         color = theme.STATE_COLORS.get(self._state, theme.ACCENT)
         # status dot
-        self.canvas.create_oval(17, h / 2 - 5, 27, h / 2 + 5, fill=color, outline="")
+        self.canvas.create_oval(17 * u, cy - 5 * u, 27 * u, cy + 5 * u,
+                                fill=color, outline="")
 
-        text = self._text + self._elapsed_suffix()
+        text = self._shown_text
 
         if self.style == "minimal":
-            self.canvas.create_text(38, h / 2, text=text, anchor="w",
-                                    fill=theme.TEXT, font=theme.font_tuple(12))
+            self.canvas.create_text(38 * u, cy, text=text, anchor="w",
+                                    fill=theme.TEXT, font=theme.font_tuple(TEXT_SIZE))
             return
 
         # level meter / activity indicator
-        x = 39
+        x = 39 * u
         if self._state == "listening":
             for i, level in enumerate(self._levels):
-                bar_h = 6 + int(level * 22)
+                bar_h = (6 + level * 22) * u
                 self.canvas.create_rectangle(
-                    x + i * 7, h / 2 - bar_h / 2, x + i * 7 + 4, h / 2 + bar_h / 2,
+                    x + i * 7 * u, cy - bar_h / 2, x + i * 7 * u + 4 * u, cy + bar_h / 2,
                     fill=color, outline="")
         elif self._state == "transcribing":
             for i in range(3):
                 lit = (self._phase + i) % 6 < 3
-                r = 3.2 if lit else 2.2
-                cx = x + i * 10 + 3
-                self.canvas.create_oval(cx - r, h / 2 - r, cx + r, h / 2 + r,
+                r = (3.2 if lit else 2.2) * u
+                cx = x + i * 10 * u + 3 * u
+                self.canvas.create_oval(cx - r, cy - r, cx + r, cy + r,
                                         fill=color if lit else theme.TEXT_FAINT, outline="")
         else:
-            self.canvas.create_rectangle(x, h / 2 - 7, x + 4, h / 2 + 7, fill=color, outline="")
+            self.canvas.create_rectangle(x, cy - 7 * u, x + 4 * u, cy + 7 * u,
+                                         fill=color, outline="")
 
-        text_x = x + max(BAR_COUNT * 7, 30) + 12
-        self.canvas.create_text(text_x, h / 2, text=text, anchor="w",
-                                fill=theme.TEXT, font=theme.font_tuple(12))
+        self.canvas.create_text(81 * u, cy, text=text, anchor="w",
+                                fill=theme.TEXT, font=theme.font_tuple(TEXT_SIZE))
 
     def _start_animation(self) -> None:
         if self._anim_job or self._state not in ("listening", "transcribing"):

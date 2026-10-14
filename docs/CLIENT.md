@@ -40,7 +40,8 @@ Click **Finish** — the app minimises to the tray and starts listening.
 | Quit | Tray icon → **Quit** |
 
 The floating pill shows **Listening…** while recording, **Transcribing…** while
-the server works, then a short preview of your text.
+the server works, then a brief **Done** confirmation — it never displays the
+words you dictated.
 
 ## Settings
 

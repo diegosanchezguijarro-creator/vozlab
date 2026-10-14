@@ -98,8 +98,8 @@ def main() -> None:
         overlay._render()
         capture(140)
 
-    # 3. done — the text lands somewhere
-    overlay.show("Remind me to call the client on Thursday.", "done")
+    # 3. done — a neutral confirmation (the dictated words are never shown)
+    overlay.show(tr("state_done"), "done")
     capture(1600)
 
     # 4. and it disappears, loop back to listening

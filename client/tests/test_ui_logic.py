@@ -170,7 +170,6 @@ def test_every_config_default_survives_a_json_roundtrip(tmp_path, monkeypatch):
 
 # ------------------------------------------------------------ platform -----
 
-
 def test_paste_shortcut_is_platform_aware(monkeypatch):
     import importlib
 
@@ -204,3 +203,27 @@ def test_diagnostics_mention_capabilities(tmp_path, monkeypatch):
     report = diagnostics.build_report(dict(cfgmod.DEFAULTS), extra={"os": "test"})
     assert "Capabilities" in report
     assert "global hotkeys" in report
+
+
+# --------------------------------------------------------------- pill -----
+
+
+def test_ellipsize_keeps_short_text_and_trims_long_text():
+    """The pill label must fit its box instead of being clipped."""
+    from vozlab.ui import pill
+
+    def measure(text: str) -> int:
+        return len(text) * 7
+
+    assert pill._ellipsize("Listening…", 200, measure) == "Listening…"
+
+    trimmed = pill._ellipsize("a very long status message indeed", 70, measure)
+    assert trimmed.endswith("…")
+    assert measure(trimmed) <= 70
+
+
+def test_ellipsize_never_overflows_an_empty_budget():
+    from vozlab.ui import pill
+
+    assert pill._ellipsize("hello", 0, lambda s: len(s) * 7) == ""
+    assert pill._ellipsize("hello", 3, lambda s: len(s) * 7) == ""
