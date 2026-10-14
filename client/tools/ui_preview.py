@@ -20,10 +20,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import customtkinter as ctk  # noqa: E402
 
-from vozlab import VERSION  # noqa: E402
-from vozlab import config as cfgmod  # noqa: E402
-from vozlab import i18n  # noqa: E402
-from vozlab.ui import about, pill, settings_window, theme, wizard  # noqa: E402
+from scribe import VERSION  # noqa: E402
+from scribe import config as cfgmod  # noqa: E402
+from scribe import i18n  # noqa: E402
+from scribe.ui import about, pill, settings_window, theme, wizard  # noqa: E402
 
 SHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "..", "docs", "images")
@@ -58,7 +58,7 @@ class DemoServerAPI:
 
     def status(self):
         return {
-            "name": "vozlab", "version": VERSION, "api": 1,
+            "name": "scribe", "version": VERSION, "api": 1,
             "whisper_model": "small", "language": "auto",
             "cleanup": True, "cleanup_model": "qwen2.5:7b-instruct",
             "device": "cuda", "uptime_s": 3 * 3600 + 900, "requests": 248,
@@ -119,7 +119,7 @@ class DemoServerAPI:
 
 
 class FakeApp:
-    """Just enough of VozLabApp for the windows to render."""
+    """Just enough of ScribeApp for the windows to render."""
 
     def __init__(self, lang: str = "auto"):
         theme.setup()
@@ -137,8 +137,8 @@ class FakeApp:
         self.last_server_health = None
         self.last_text = ""
         # the windows build their own client: hand them the demo server
-        settings_window.VozLabAPI = DemoServerAPI
-        wizard.VozLabAPI = DemoServerAPI
+        settings_window.ScribeAPI = DemoServerAPI
+        wizard.ScribeAPI = DemoServerAPI
 
     def post(self, fn):
         fn()          # synchronous in preview mode

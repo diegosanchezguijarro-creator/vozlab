@@ -53,7 +53,7 @@ def setup(debug: bool = False) -> str:
 
     try:
         os.makedirs(cfgmod.config_dir(), exist_ok=True)
-        _log_path = os.path.join(cfgmod.config_dir(), "vozlab.log")
+        _log_path = os.path.join(cfgmod.config_dir(), "scribe.log")
         # keep the log from growing forever
         if os.path.exists(_log_path) and os.path.getsize(_log_path) > 1_000_000:
             os.replace(_log_path, _log_path + ".1")

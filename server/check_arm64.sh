@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Verify an arm64 (Raspberry Pi 5 / NAS) VozLab server end to end.
+# Verify an arm64 (Raspberry Pi 5 / NAS) Scribe server end to end.
 #
 # We build the arm64 image in CI, where the only thing we can do is run it under
 # QEMU emulation — and emulated CTranslate2 inference does not complete, so this
 # script exists for people with real aarch64 hardware.
 #
 #   bash check_arm64.sh              # uses the published image
-#   VOZLAB_VERSION=1.4.0 bash check_arm64.sh
+#   SCRIBE_VERSION=1.4.0 bash check_arm64.sh
 #
 # It builds a container, waits for the model, posts the bundled sample to
 # /transcribe, and prints what came back. Expect a couple of seconds per
@@ -14,8 +14,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-IMAGE="ghcr.io/diegosg-dev/vozlab-server:${VOZLAB_VERSION:-latest}"
-PORT="${VOZLAB_PORT:-8092}"
+IMAGE="ghcr.io/diegosg-dev/scribe-server:${SCRIBE_VERSION:-latest}"
+PORT="${SCRIBE_PORT:-8092}"
 
 say()  { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 warn() { printf '\033[1;33mWARNING: %s\033[0m\n' "$*"; }
@@ -31,17 +31,17 @@ mkdir -p data
 chown -R 1000:1000 data 2>/dev/null || warn "could not chown ./data (try: sudo chown -R 1000:1000 data)"
 
 say "Starting $IMAGE"
-docker rm -f vozlab-arm-check >/dev/null 2>&1 || true
-docker run --rm -d --name vozlab-arm-check \
+docker rm -f scribe-arm-check >/dev/null 2>&1 || true
+docker run --rm -d --name scribe-arm-check \
   -p "${PORT}:8080" -p "8093:8093/udp" \
   -v "${PWD}/data:/data" \
   --user 1000:1000 --read-only --tmpfs /tmp:size=512m \
   --security-opt no-new-privileges:true --cap-drop ALL \
-  -e VOZLAB_PUBLIC_PORT="${PORT}" \
+  -e SCRIBE_PUBLIC_PORT="${PORT}" \
   --add-host host.docker.internal:host-gateway \
   "$IMAGE" >/dev/null
 
-cleanup() { docker rm -f vozlab-arm-check >/dev/null 2>&1 || true; }
+cleanup() { docker rm -f scribe-arm-check >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
 say "Waiting for the model (a Pi needs 30-90 s the first time)"
@@ -49,7 +49,7 @@ for _ in $(seq 1 100); do
   if curl -fsS "http://localhost:${PORT}/health" >/dev/null 2>&1; then break; fi
   sleep 3
 done
-curl -fsS "http://localhost:${PORT}/health" || die "the server never became healthy — check: docker logs vozlab-arm-check"
+curl -fsS "http://localhost:${PORT}/health" || die "the server never became healthy — check: docker logs scribe-arm-check"
 echo
 
 TOKEN="$(python3 -c 'import json;print(json.load(open("data/config.json"))["token"])' 2>/dev/null \
@@ -59,7 +59,7 @@ TOKEN="$(python3 -c 'import json;print(json.load(open("data/config.json"))["toke
 say "Running the built-in end-to-end test (decode + Whisper + LLM cleanup)"
 START=$(date +%s)
 curl -fsS -X POST -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:${PORT}/self-test" || die "self-test failed — check: docker logs vozlab-arm-check"
+  "http://localhost:${PORT}/self-test" || die "self-test failed — check: docker logs scribe-arm-check"
 echo
 END=$(date +%s)
 

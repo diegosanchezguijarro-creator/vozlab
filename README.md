@@ -11,8 +11,8 @@ audio leaving your network.
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
-  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosg-dev/vozlab?include_prereleases&sort=semver" alt="Latest release"></a>
-  <a href="../../actions/workflows/ci.yml"><img src="https://github.com/diegosg-dev/vozlab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosg-dev/scribe?include_prereleases&sort=semver" alt="Latest release"></a>
+  <a href="../../actions/workflows/ci.yml"><img src="https://github.com/diegosg-dev/scribe/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-informational.svg" alt="Windows 10/11">
   <img src="https://img.shields.io/badge/telemetry-none-success.svg" alt="No telemetry">
@@ -52,7 +52,7 @@ that stays at home. You need both once.
 Open **PowerShell** and paste:
 
 ```powershell
-irm https://raw.githubusercontent.com/diegosg-dev/vozlab/main/installer/deploy.ps1 | iex
+irm https://raw.githubusercontent.com/diegosg-dev/scribe/main/installer/deploy.ps1 | iex
 ```
 
 This works **even with Smart App Control enabled** (it runs the app with your
@@ -64,11 +64,11 @@ exact `winget` command to install it.
 <summary>Prefer to look before you run? (recommended for the cautious)</summary>
 
 1. Download [`installer/deploy.ps1`](installer/deploy.ps1) and
-   [`installer/VozLab.bat`](installer/VozLab.bat) (right-click → *Save link as…*).
-2. Double-click `VozLab.bat` — it runs the script above.
+   [`installer/Scribe.bat`](installer/Scribe.bat) (right-click → *Save link as…*).
+2. Double-click `Scribe.bat` — it runs the script above.
 
-Or download the `VozLab-<version>-src.zip` from the
-[latest release](../../releases/latest) and double-click `installer/VozLab.bat`
+Or download the `Scribe-<version>-src.zip` from the
+[latest release](../../releases/latest) and double-click `installer/Scribe.bat`
 inside it. Nothing is hidden: every line of the installer is a few dozen lines of
 PowerShell you can read.
 </details>
@@ -76,7 +76,7 @@ PowerShell you can read.
 <details>
 <summary>Alternative: classic installer (.exe)</summary>
 
-`VozLab-Setup-<version>.exe` from the [releases page](../../releases/latest) is a
+`Scribe-Setup-<version>.exe` from the [releases page](../../releases/latest) is a
 normal Windows installer — quicker, but it's an unsigned binary, so **Smart App
 Control will block it**. Turn SAC off (*Settings → Privacy & security → Windows
 Security → App & browser control → Smart App Control*) if you're comfortable with
@@ -89,8 +89,8 @@ On the machine that will do the heavy lifting (Ubuntu/Debian, or anything runnin
 Docker — NAS, Windows with Docker Desktop, macOS):
 
 ```bash
-git clone https://github.com/diegosg-dev/vozlab.git
-cd vozlab/server
+git clone https://github.com/diegosg-dev/scribe.git
+cd scribe/server
 bash install.sh --with-ai
 ```
 
@@ -253,13 +253,13 @@ auto-stop, language), **Audio** (device picker, mic test, silence thresholds),
 Full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
 **Server** — the same window's Server tab drives the server over its API. Or edit
-`server/data/config.json` / use `VOZLAB_*` variables:
+`server/data/config.json` / use `SCRIBE_*` variables:
 Full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md). Stored in
-`%APPDATA%\VozLab\config.json` (the token encrypted with DPAPI).
+`%APPDATA%\Scribe\config.json` (the token encrypted with DPAPI).
 
 **Server** — the same window's Server tab drives the server over its API, so
 model and language changes apply immediately. Alternatively edit
-`server/data/config.json`, or use `VOZLAB_*` environment variables (handy with
+`server/data/config.json`, or use `SCRIBE_*` environment variables (handy with
 Docker):
 
 | Setting | Default | What it does |
@@ -279,10 +279,10 @@ Every option is documented in **[docs/SERVER.md](docs/SERVER.md)**.
 
 | Part | How |
 |---|---|
-| Client | `powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\VozLab\update.ps1"` — or Settings → System → **Check now** / **Update now** |
+| Client | `powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\Scribe\update.ps1"` — or Settings → System → **Check now** / **Update now** |
 | Server | `cd server && docker compose pull && docker compose up -d` (add the same `-f` flags you installed with) |
 
-Your settings live in `%APPDATA%\VozLab` (client) and `server/data` (server) and
+Your settings live in `%APPDATA%\Scribe` (client) and `server/data` (server) and
 survive updates.
 
 ---
@@ -326,7 +326,7 @@ a thin FastAPI wrapper (`server/server.py`). Cloud APIs would defeat the point.
 their own server (`install.sh --with-ai`). Nothing points at your machine.
 
 **Is there a macOS/Linux client?** Not officially yet. The client is plain Python,
-so `python run_vozlab.py` works on Linux/macOS for development
+so `python run_scribe.py` works on Linux/macOS for development
 ([docs/BUILD.md](docs/BUILD.md)).
 
 ---

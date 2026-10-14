@@ -1,4 +1,4 @@
-"""Small i18n layer. Translations live in `vozlab/locales/<lang>.json`.
+"""Small i18n layer. Translations live in `scribe/locales/<lang>.json`.
 
 Adding a language = copy `en.json`, translate the values, open a pull request
 (see CONTRIBUTING). Keys missing from a translation fall back to English.

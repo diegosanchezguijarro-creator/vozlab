@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cleanup import DEFAULT_CLEANUP_PROMPT, cleanup_ok  # noqa: E402
 
-OLLAMA = os.environ.get("VOZLAB_OLLAMA", "http://localhost:11434")
+OLLAMA = os.environ.get("SCRIBE_OLLAMA", "http://localhost:11434")
 
 # (raw transcript, what a correct cleanup must contain, must-not-contain)
 CASES = [

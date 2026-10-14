@@ -144,14 +144,14 @@ def test_build_prompt_default_style_is_just_the_base():
 
 
 def test_build_prompt_lists_vocabulary_without_inviting_extra_words():
-    prompt = build_prompt(DEFAULT_CLEANUP_PROMPT, "default", ["VozLab", "Diego"])
-    assert "VozLab, Diego" in prompt
+    prompt = build_prompt(DEFAULT_CLEANUP_PROMPT, "default", ["Scribe", "Diego"])
+    assert "Scribe, Diego" in prompt
     assert "never insert" in prompt.lower()
 
 
 def test_sanitize_vocabulary_dedupes_and_trims():
-    assert sanitize_vocabulary([" VozLab ", "vozlab", "Diego,"]) == ["VozLab", "Diego"]
-    assert sanitize_vocabulary("VozLab, Diego;  ") == ["VozLab", "Diego"]
+    assert sanitize_vocabulary([" Scribe ", "scribe", "Diego,"]) == ["Scribe", "Diego"]
+    assert sanitize_vocabulary("Scribe, Diego;  ") == ["Scribe", "Diego"]
     assert sanitize_vocabulary([]) == []
     assert sanitize_vocabulary(None) == []
     assert sanitize_vocabulary(["   ", "x"]) == ["x"]

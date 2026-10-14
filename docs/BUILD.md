@@ -2,7 +2,7 @@
 
 ## Automatically (GitHub Actions)
 
-1. Bump `VERSION` in `client/vozlab/__init__.py` **and** `server/server.py`, and add a
+1. Bump `VERSION` in `client/scribe/__init__.py` **and** `server/server.py`, and add a
    `CHANGELOG.md` entry.
 2. Commit, then tag and push:
 
@@ -27,17 +27,17 @@ The workflow fails fast if the tag doesn't match `VERSION` in the code.
 cd client
 pip install -r requirements.txt -r requirements-dev.txt
 python -m pytest tests -q
-python run_vozlab.py            # run from source (dev mode)
-pyinstaller vozlab.spec --noconfirm
-# -> dist\VozLab\VozLab.exe
+python run_scribe.py            # run from source (dev mode)
+pyinstaller scribe.spec --noconfirm
+# -> dist\Scribe\Scribe.exe
 ```
 
 Then the installer (requires [Inno Setup 6](https://jrsoftware.org/isdl.php)):
 
 ```powershell
 cd ..\installer
-& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion=1.0.1 vozlab.iss
-# -> installer\output\VozLab-Setup-1.0.1.exe
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion=1.0.1 scribe.iss
+# -> installer\output\Scribe-Setup-1.0.1.exe
 ```
 
 ## Locally on Linux/macOS (for testing, not for shipping)
@@ -49,7 +49,7 @@ cd client
 sudo apt-get install -y libportaudio2      # PortAudio for sounddevice
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python -m pytest tests -q
-pyinstaller vozlab.spec --noconfirm        # produces a Linux binary
+pyinstaller scribe.spec --noconfirm        # produces a Linux binary
 ```
 
 ## Code signing
@@ -73,10 +73,10 @@ CI sketch (Trusted Signing) — sign both the app and the installer, in order:
           endpoint: ${{ secrets.AZURE_TS_ENDPOINT }}
           trusted-signing-account-name: ${{ secrets.AZURE_TS_ACCOUNT }}
           certificate-profile-name: ${{ secrets.AZURE_TS_PROFILE }}
-          files-folder: client/dist/VozLab
+          files-folder: client/dist/Scribe
           files-folder-filter: exe,dll
       # then build the installer so it wraps the signed binaries,
-      # and sign installer/output/VozLab-Setup-*.exe the same way
+      # and sign installer/output/Scribe-Setup-*.exe the same way
 ```
 
 Until then: Windows users with Smart App Control enabled should
@@ -91,13 +91,13 @@ Until then: Windows users with Smart App Control enabled should
 
 ```
 client/
-  vozlab/
+  scribe/
     __init__.py     version + app name
     app.py          orchestrator (tray + hotkeys + recorder + overlay)
     audio.py        microphone recording, silence-based auto-stop
     hotkeys.py      global hotkey hooking + key calibration
     api.py          HTTP client for the server
-    config.py       settings storage (%APPDATA%\VozLab\config.json)
+    config.py       settings storage (%APPDATA%\Scribe\config.json)
     i18n.py         English/Spanish strings
     log.py          file logging (works in windowed builds)
     ui/
@@ -111,8 +111,8 @@ client/
   tests/            pytest suite (headless, no audio hardware needed)
   tools/            make_icon.py, ui_preview.py, install_from_source.ps1
   assets/           icon.ico / icon.png
-  vozlab.spec       PyInstaller build definition
-installer/vozlab.iss  Inno Setup script
+  scribe.spec       PyInstaller build definition
+installer/scribe.iss  Inno Setup script
 server/               Dockerised transcription + cleanup service
 ```
 
@@ -131,7 +131,7 @@ DISPLAY=:99 python tools/ui_preview.py --shot     # also write PNGs to docs/imag
 
 ## Release checklist
 
-- [ ] `VERSION` bumped in **both** `client/vozlab/__init__.py` and `server/server.py`
+- [ ] `VERSION` bumped in **both** `client/scribe/__init__.py` and `server/server.py`
 - [ ] `CHANGELOG.md` updated
 - [ ] CI green on `main`
 - [ ] Tag pushed (`vX.Y.Z`)

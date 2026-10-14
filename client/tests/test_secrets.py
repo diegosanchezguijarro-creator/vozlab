@@ -8,20 +8,27 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vozlab import config as cfgmod  # noqa: E402
-from vozlab import secretstore  # noqa: E402
+from scribe import config as cfgmod  # noqa: E402
+from scribe import secretstore  # noqa: E402
 
 
 @pytest.fixture
 def windows(monkeypatch):
-    """Pretend we are on Windows and stand in for the DPAPI calls."""
-    def encrypt(raw: bytes) -> bytes:
-        return b"enc:" + raw[::-1]
+    """Pretend we are on Windows and stand in for the DPAPI calls.
 
-    def decrypt(raw: bytes) -> bytes:
-        if not raw.startswith(b"enc:"):      # DPAPI verifies integrity too
+    The fake honours the entropy argument, so we can prove a token sealed
+    before the rename (old entropy) still decrypts.
+    """
+    def encrypt(raw: bytes, entropy: bytes = secretstore._ENTROPY) -> bytes:
+        return b"enc:" + entropy + b"\x00" + raw[::-1]
+
+    def decrypt(raw: bytes, entropy: bytes = secretstore._ENTROPY) -> bytes:
+        if not raw.startswith(b"enc:"):       # DPAPI verifies integrity too
             raise OSError("bad DPAPI blob")
-        return raw[4:][::-1]
+        used, _, payload = raw[4:].partition(b"\x00")
+        if used != entropy:
+            raise OSError("wrong DPAPI entropy")
+        return payload[::-1]
 
     monkeypatch.setattr(secretstore, "available", lambda: True)
     monkeypatch.setattr(secretstore, "_encrypt", encrypt)
@@ -67,6 +74,16 @@ def test_windows_blob_cannot_be_read_elsewhere(windows, monkeypatch):
     monkeypatch.setattr(secretstore, "available", lambda: False)
     with pytest.raises(OSError):
         secretstore.unprotect(sealed)
+
+
+def test_token_sealed_before_the_rename_still_decrypts(windows):
+    """A token encrypted with the old DPAPI entropy must keep working."""
+    import base64
+
+    legacy_blob = (b"enc:" + secretstore._LEGACY_ENTROPY[0] + b"\x00"
+                   + b"hunter2"[::-1])
+    value = secretstore.PREFIX + base64.b64encode(legacy_blob).decode("ascii")
+    assert secretstore.unprotect(value) == "hunter2"
 
 
 # ------------------------------------------------------------------- config --
@@ -124,13 +141,32 @@ def test_missing_config_has_an_empty_token(tmp_config):
     assert cfgmod.load()["token"] == ""
 
 
+def test_config_folder_migrates_from_the_old_name(tmp_path, monkeypatch):
+    """Upgrading from VozLab must carry the settings and log across, once."""
+    old = tmp_path / "VozLab"
+    new = tmp_path / "Scribe"
+    old.mkdir()
+    (old / "config.json").write_text(
+        json.dumps({"server_host": "192.168.0.23", "token": "t"}))
+    (old / "vozlab.log").write_text("hello\n")
+    monkeypatch.setattr(cfgmod, "config_dir", lambda: str(new))
+    monkeypatch.setattr(cfgmod, "legacy_config_dir", lambda: str(old))
+
+    assert cfgmod.migrate_legacy_config() is True
+    assert (new / "config.json").exists()
+    assert (new / "scribe.log").read_text() == "hello\n"
+    assert cfgmod.load()["server_host"] == "192.168.0.23"
+    # idempotent: there is nothing left to migrate the second time
+    assert cfgmod.migrate_legacy_config() is False
+
+
 # --------------------------------------------------------------- log scrubbing --
 
 
 @pytest.fixture
 def logfile(tmp_path, monkeypatch):
-    from vozlab import log as logmod
-    path = tmp_path / "vozlab.log"
+    from scribe import log as logmod
+    path = tmp_path / "scribe.log"
     monkeypatch.setattr(logmod, "_log_path", str(path))
     monkeypatch.setattr(logmod, "_console", None)
     logmod.set_secrets([])

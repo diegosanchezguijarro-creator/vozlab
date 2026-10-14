@@ -4,12 +4,12 @@
         powershell -ExecutionPolicy Bypass -File update.ps1
         powershell -ExecutionPolicy Bypass -File update.ps1 -CheckOnly
 
-    Your settings and logs live in %APPDATA%\VozLab and are never touched.
+    Your settings and logs live in %APPDATA%\Scribe and are never touched.
 #>
 [CmdletBinding()]
 param(
-    [string]$Repo = "diegosg-dev/vozlab",
-    [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\VozLab'),
+    [string]$Repo = "diegosg-dev/scribe",
+    [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\Scribe'),
     [switch]$CheckOnly,
     [switch]$Force,
     [switch]$NoLaunch
@@ -33,7 +33,7 @@ Info "Scribe installed: $current"
 Info "Checking GitHub for the latest release..."
 try {
     $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" `
-                                 -Headers @{ 'User-Agent' = 'VozLab-Updater' }
+                                 -Headers @{ 'User-Agent' = 'Scribe-Updater' }
 } catch {
     Fail "could not reach GitHub ($($_.Exception.Message))."
 }
@@ -64,7 +64,7 @@ Info "Updating $current -> $latest ..."
 # Fetch the new installer from the tag we are upgrading to, so the update logic
 # always matches the version being installed.
 $deployUrl = "https://raw.githubusercontent.com/$Repo/$latest/installer/deploy.ps1"
-$deployPath = Join-Path $env:TEMP ("vozlab-deploy-" + [guid]::NewGuid().ToString('N').Substring(0, 8) + ".ps1")
+$deployPath = Join-Path $env:TEMP ("scribe-deploy-" + [guid]::NewGuid().ToString('N').Substring(0, 8) + ".ps1")
 try {
     Invoke-WebRequest -UseBasicParsing -Uri $deployUrl -OutFile $deployPath
 } catch {

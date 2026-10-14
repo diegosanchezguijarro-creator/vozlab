@@ -4,7 +4,7 @@ Two configuration files exist: one for the app (your laptop) and one for the
 server (the machine with Docker). Neither needs editing by hand — the app's
 settings window and `install.sh` cover almost everything.
 
-## Client — `%APPDATA%\VozLab\config.json`
+## Client — `%APPDATA%\Scribe\config.json`
 
 Everything here is editable from the tray icon → **Settings**. The file is shown
 for completeness and for advanced tweaks; the app rewrites it on save.
@@ -46,13 +46,13 @@ for completeness and for advanced tweaks; the app rewrites it on save.
 ### Where things live
 
 ```
-%APPDATA%\VozLab\config.json     your settings
-%APPDATA%\VozLab\vozlab.log      log (transcripts only with debug on)
-%LOCALAPPDATA%\Programs\VozLab\  the app + its virtual environment
+%APPDATA%\Scribe\config.json     your settings
+%APPDATA%\Scribe\scribe.log      log (transcripts only with debug on)
+%LOCALAPPDATA%\Programs\Scribe\  the app + its virtual environment
 ```
 
 Deleting `config.json` re-runs the first-run wizard. Deleting the whole
-`%LOCALAPPDATA%\Programs\VozLab` folder is a clean uninstall.
+`%LOCALAPPDATA%\Programs\Scribe` folder is a clean uninstall.
 
 ## Server — `server/data/config.json`
 
@@ -85,34 +85,34 @@ Created on first boot with a generated token. Edit it and restart
 Set these instead of (or to override) the file — anything set here wins:
 
 ```bash
-VOZLAB_TOKEN=…                  # pin the token
-VOZLAB_WHISPER_MODEL=medium
-VOZLAB_LANGUAGE=es
-VOZLAB_COMPUTE_TYPE=int8
-VOZLAB_CLEANUP=true
-VOZLAB_CLEANUP_GUARD=true
-VOZLAB_CLEANUP_MODEL=qwen2.5:3b-instruct
-VOZLAB_CLEANUP_BASE_URL=http://ollama:11434
-VOZLAB_VAD_FILTER=true          # false = faster on very short clips
-VOZLAB_EXPOSE_DETAILS=false      # true = verbose /health (unauthenticated)
-VOZLAB_TLS_CERT=/data/tls/cert.pem   # enables HTTPS (see install.sh --tls)
-VOZLAB_TLS_KEY=/data/tls/key.pem
-VOZLAB_PUBLIC_PORT=8092          # port advertised to LAN discovery
-VOZLAB_DISCOVERY_PORT=8093       # UDP probe port; 0 disables discovery
-VOZLAB_RATE_LIMIT=120           # requests/minute per client; 0 disables
-VOZLAB_CONFIG=/data/config.json # where to read/write the file
+SCRIBE_TOKEN=…                  # pin the token
+SCRIBE_WHISPER_MODEL=medium
+SCRIBE_LANGUAGE=es
+SCRIBE_COMPUTE_TYPE=int8
+SCRIBE_CLEANUP=true
+SCRIBE_CLEANUP_GUARD=true
+SCRIBE_CLEANUP_MODEL=qwen2.5:3b-instruct
+SCRIBE_CLEANUP_BASE_URL=http://ollama:11434
+SCRIBE_VAD_FILTER=true          # false = faster on very short clips
+SCRIBE_EXPOSE_DETAILS=false      # true = verbose /health (unauthenticated)
+SCRIBE_TLS_CERT=/data/tls/cert.pem   # enables HTTPS (see install.sh --tls)
+SCRIBE_TLS_KEY=/data/tls/key.pem
+SCRIBE_PUBLIC_PORT=8092          # port advertised to LAN discovery
+SCRIBE_DISCOVERY_PORT=8093       # UDP probe port; 0 disables discovery
+SCRIBE_RATE_LIMIT=120           # requests/minute per client; 0 disables
+SCRIBE_CONFIG=/data/config.json # where to read/write the file
 ```
 
 Example — pin tokens and models in Compose:
 
 ```yaml
 services:
-  vozlab:
-    image: ghcr.io/diegosg-dev/vozlab-server:latest
+  scribe:
+    image: ghcr.io/diegosg-dev/scribe-server:latest
     environment:
-      - VOZLAB_TOKEN=choose-something-long
-      - VOZLAB_WHISPER_MODEL=small.en
-      - VOZLAB_CLEANUP_MODEL=qwen2.5:3b-instruct
+      - SCRIBE_TOKEN=choose-something-long
+      - SCRIBE_WHISPER_MODEL=small.en
+      - SCRIBE_CLEANUP_MODEL=qwen2.5:3b-instruct
 ```
 
 ### Keeping the model resident

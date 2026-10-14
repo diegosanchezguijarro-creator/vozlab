@@ -5,7 +5,7 @@ Nothing leaves your network: Whisper + the cleanup LLM run on this machine.
 Endpoints:
   GET  /            -> service info (name, version, model)
   GET  /health      -> {"ok": true, "version": ...}  (no auth, minimal)
-  GET  /version     -> {"name": "vozlab", "version": "..."}
+  GET  /version     -> {"name": "scribe", "version": "..."}
   GET  /status      -> full details: models, device, uptime   (auth)
   GET  /settings    -> server settings, token removed         (auth)
   PATCH /settings   -> change models/language at runtime      (auth)
@@ -38,35 +38,53 @@ from starlette.concurrency import run_in_threadpool
 from cleanup import (DEFAULT_CLEANUP_PROMPT, STYLES, build_prompt, cleanup_ok,
                      normalize_style, sanitize_vocabulary, strip_decoration)
 
-VERSION = "1.5.0"
-NAME = "vozlab"
+VERSION = "1.6.0"
+NAME = "scribe"
 API_VERSION = 1          # bump when the HTTP contract changes incompatibly
 
-CONFIG_PATH = os.environ.get("VOZLAB_CONFIG", "/data/config.json")
+
+def _env(suffix: str, default: str = "") -> str:
+    """Read `SCRIBE_<suffix>`, falling back to the pre-rename `VOZLAB_<suffix>`.
+
+    Keeps an existing server/.env working after the rename.
+    """
+    return (os.environ.get(f"SCRIBE_{suffix}")
+            or os.environ.get(f"VOZLAB_{suffix}")
+            or default)
+
+
+CONFIG_PATH = _env("CONFIG", "/data/config.json")
 
 # Rate limiting: dictations are seconds apart, so this only stops abuse/mistakes.
-RATE_LIMIT_PER_MINUTE = int(os.environ.get("VOZLAB_RATE_LIMIT", "120"))
+RATE_LIMIT_PER_MINUTE = int(_env("RATE_LIMIT", "120"))
 LOG_RING_SIZE = 300
 
 # The app can find this server on the LAN by broadcasting a UDP probe.
-DISCOVERY_PORT = int(os.environ.get("VOZLAB_DISCOVERY_PORT", "8093"))
-DISCOVERY_MAGIC = b"VOZLAB/1 discover"
+DISCOVERY_PORT = int(_env("DISCOVERY_PORT", "8093"))
+DISCOVERY_MAGIC = b"SCRIBE/1 discover"
+# probe magic used before the rename: still accepted so an old app can discover
+# the new server (a new app also accepts the old server's reply)
+LEGACY_DISCOVERY_MAGIC = b"VOZLAB/1 discover"
 # port the app should use — the published one, not the container's 8080
-PUBLIC_PORT = os.environ.get("VOZLAB_PUBLIC_PORT", "8092")
+PUBLIC_PORT = _env("PUBLIC_PORT", "8092")
 
 # Environment overrides — handy for Docker/Compose deployments where editing
 # config.json is awkward. Anything set here wins over the file.
-ENV_OVERRIDES = {
-    "VOZLAB_TOKEN": "token",
-    "VOZLAB_WHISPER_MODEL": "whisper_model",
-    "VOZLAB_LANGUAGE": "language",
-    "VOZLAB_COMPUTE_TYPE": "compute_type",
-    "VOZLAB_CLEANUP": "cleanup",
-    "VOZLAB_CLEANUP_GUARD": "cleanup_guard",
-    "VOZLAB_CLEANUP_MODEL": "cleanup_model",
-    "VOZLAB_CLEANUP_BASE_URL": "cleanup_base_url",
-    "VOZLAB_EXPOSE_DETAILS": "expose_details",
-}
+_ENV_KEYS = (
+    ("TOKEN", "token"),
+    ("WHISPER_MODEL", "whisper_model"),
+    ("LANGUAGE", "language"),
+    ("COMPUTE_TYPE", "compute_type"),
+    ("CLEANUP", "cleanup"),
+    ("CLEANUP_GUARD", "cleanup_guard"),
+    ("CLEANUP_MODEL", "cleanup_model"),
+    ("CLEANUP_BASE_URL", "cleanup_base_url"),
+    ("EXPOSE_DETAILS", "expose_details"),
+)
+ENV_OVERRIDES = {}
+for _suffix, _key in _ENV_KEYS:
+    ENV_OVERRIDES[f"VOZLAB_{_suffix}"] = _key   # pre-rename alias (lower priority)
+    ENV_OVERRIDES[f"SCRIBE_{_suffix}"] = _key
 MAX_AUDIO_BYTES = 25 * 1024 * 1024  # 25 MB (~2h of 16kHz mono WAV)
 
 DEFAULT_CONFIG = {
@@ -98,7 +116,7 @@ _rate_buckets: dict[str, deque[float]] = {}
 def _discovery_payload() -> bytes:
     """What a probe gets back: no token, no settings, nothing sensitive."""
     cfg = _state.get("config") or {}
-    cert = os.environ.get("VOZLAB_TLS_CERT") or cfg.get("tls_certfile")
+    cert = _env("TLS_CERT") or cfg.get("tls_certfile")
     return json.dumps({
         "name": NAME,
         "version": VERSION,
@@ -131,7 +149,8 @@ def _discovery_loop() -> None:
                 continue
             except OSError:
                 break
-            if not data.startswith(DISCOVERY_MAGIC):
+            if not (data.startswith(DISCOVERY_MAGIC)
+                    or data.startswith(LEGACY_DISCOVERY_MAGIC)):
                 continue
             try:
                 sock.sendto(_discovery_payload(), addr)
@@ -146,11 +165,11 @@ def log_line(message: str) -> None:
     stamp = time.strftime("%Y-%m-%d %H:%M:%S")
     line = f"{stamp} {message}"
     _log_ring.append(line)
-    print(f"[vozlab] {message}", flush=True)
+    print(f"[scribe] {message}", flush=True)
 
 
 def _apply_env(cfg: dict) -> dict:
-    """Apply VOZLAB_* environment overrides on top of the config file."""
+    """Apply SCRIBE_* environment overrides on top of the config file."""
     for env_name, key in ENV_OVERRIDES.items():
         raw = os.environ.get(env_name)
         if raw is None or raw == "":
@@ -205,7 +224,7 @@ def load_config():
     if not cfg.get("token"):
         cfg["token"] = secrets.token_urlsafe(24)
         created = True
-    if created and not os.environ.get("VOZLAB_TOKEN"):
+    if created and not os.environ.get("SCRIBE_TOKEN"):
         try:
             os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
             with open(CONFIG_PATH, "w") as f:
@@ -303,7 +322,7 @@ def _token_hash(token: str, salt: str) -> str:
 def authenticate(authorization: str, request: Request | None = None) -> tuple[str, dict | None]:
     """Check a bearer token. Returns (role, device_entry).
 
-    The admin token (config.json / VOZLAB_TOKEN) always works. Extra
+    The admin token (config.json / SCRIBE_TOKEN) always works. Extra
     per-device tokens can be issued and revoked individually, so a lost
     laptop doesn't mean rotating the key for every other machine.
     """
@@ -406,7 +425,7 @@ def service_info():
         "cleanup": cfg["cleanup"],
         "cleanup_model": cfg["cleanup_model"] if cfg["cleanup"] else None,
         "device": _state.get("device"),
-        "tls": bool(os.environ.get("VOZLAB_TLS_CERT") or cfg.get("tls_certfile")),
+        "tls": bool(_env("TLS_CERT") or cfg.get("tls_certfile")),
     }
     if _state.get("started_at"):
         info["uptime_s"] = int(time.time() - _state["started_at"])

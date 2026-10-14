@@ -16,9 +16,9 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Point the server at a throwaway config *before* importing it.
-_TMP = tempfile.mkdtemp(prefix="vozlab-test-")
-os.environ["VOZLAB_CONFIG"] = os.path.join(_TMP, "config.json")
-os.environ["VOZLAB_TOKEN"] = "test-token"
+_TMP = tempfile.mkdtemp(prefix="scribe-test-")
+os.environ["SCRIBE_CONFIG"] = os.path.join(_TMP, "config.json")
+os.environ["SCRIBE_TOKEN"] = "test-token"
 
 import server  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -72,7 +72,7 @@ def test_docs_are_disabled():
 
 def test_root_lists_only_authenticated_endpoints():
     body = client.get("/").json()
-    assert body["name"] == "vozlab"
+    assert body["name"] == "scribe"
     assert "token" not in json.dumps(body)
 
 
@@ -365,9 +365,9 @@ def test_vocabulary_is_sent_to_whisper_as_an_initial_prompt(monkeypatch):
             return [], FakeInfo()
 
     monkeypatch.setitem(server._state, "model", FakeModel())
-    cfg = {**server.DEFAULT_CONFIG, "vocabulary": ["VozLab", "Diego"]}
+    cfg = {**server.DEFAULT_CONFIG, "vocabulary": ["Scribe", "Diego"]}
     server.transcribe_raw(cfg, b"RIFF")
-    assert "VozLab" in captured["initial_prompt"]
+    assert "Scribe" in captured["initial_prompt"]
     assert "Diego" in captured["initial_prompt"]
 
 
@@ -391,17 +391,17 @@ def test_settings_expose_and_update_vocabulary():
     assert client.get("/settings", headers=AUTH).json()["vocabulary"] == []
     assert "styles" in client.get("/settings", headers=AUTH).json()
 
-    r = client.patch("/settings", headers=AUTH, json={"vocabulary": ["VozLab", "vozlab", "Diego"]})
+    r = client.patch("/settings", headers=AUTH, json={"vocabulary": ["Scribe", "scribe", "Diego"]})
     assert r.status_code == 200
-    assert r.json()["applied"]["vocabulary"] == ["VozLab", "Diego"]
-    assert client.get("/settings", headers=AUTH).json()["vocabulary"] == ["VozLab", "Diego"]
+    assert r.json()["applied"]["vocabulary"] == ["Scribe", "Diego"]
+    assert client.get("/settings", headers=AUTH).json()["vocabulary"] == ["Scribe", "Diego"]
 
 
 def test_discovery_reply_leaks_nothing():
     import json as _json
     server._state["device"] = "cuda"
     payload = _json.loads(server._discovery_payload())
-    assert payload["name"] == "vozlab"
+    assert payload["name"] == "scribe"
     assert payload["port"] == int(server.PUBLIC_PORT)
     assert set(payload) <= {"name", "version", "api", "port", "tls", "whisper_model", "device"}
     blob = _json.dumps(payload)
@@ -410,9 +410,9 @@ def test_discovery_reply_leaks_nothing():
 
 
 def test_status_reports_tls_state(monkeypatch):
-    monkeypatch.delenv("VOZLAB_TLS_CERT", raising=False)
+    monkeypatch.delenv("SCRIBE_TLS_CERT", raising=False)
     assert client.get("/status", headers=AUTH).json()["tls"] is False
-    monkeypatch.setenv("VOZLAB_TLS_CERT", "/data/tls/cert.pem")
+    monkeypatch.setenv("SCRIBE_TLS_CERT", "/data/tls/cert.pem")
     assert client.get("/status", headers=AUTH).json()["tls"] is True
 
 
@@ -423,12 +423,12 @@ def test_run_server_ssl_kwargs():
     importlib.reload(run_server)
     assert run_server.ssl_kwargs() == {}          # no cert configured
 
-    os.environ["VOZLAB_TLS_CERT"] = "/data/tls/cert.pem"
+    os.environ["SCRIBE_TLS_CERT"] = "/data/tls/cert.pem"
     try:
         assert run_server.ssl_kwargs() == {
             "ssl_certfile": "/data/tls/cert.pem", "ssl_keyfile": "/data/tls/cert.pem"}
-        os.environ["VOZLAB_TLS_KEY"] = "/data/tls/key.pem"
+        os.environ["SCRIBE_TLS_KEY"] = "/data/tls/key.pem"
         assert run_server.ssl_kwargs()["ssl_keyfile"] == "/data/tls/key.pem"
     finally:
-        os.environ.pop("VOZLAB_TLS_CERT", None)
-        os.environ.pop("VOZLAB_TLS_KEY", None)
+        os.environ.pop("SCRIBE_TLS_CERT", None)
+        os.environ.pop("SCRIBE_TLS_KEY", None)

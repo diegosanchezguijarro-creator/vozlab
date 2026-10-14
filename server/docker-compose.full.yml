@@ -1,19 +1,19 @@
-# All-in-one VozLab stack: the dictation server + the local cleanup AI.
+# All-in-one Scribe stack: the dictation server + the local cleanup AI.
 #
 #   docker compose -f docker-compose.full.yml up -d
 #
-# Everything runs on your machine: Whisper (in the vozlab container) and
+# Everything runs on your machine: Whisper (in the scribe container) and
 # Ollama (the text-formatting model). No cloud, no API keys.
 #
 # Override the cleanup model:
-#   VOZLAB_CLEANUP_MODEL=qwen2.5:3b-instruct docker compose -f docker-compose.full.yml up -d
+#   SCRIBE_CLEANUP_MODEL=qwen2.5:3b-instruct docker compose -f docker-compose.full.yml up -d
 #
 # CPU-only (no NVIDIA GPU): add -f docker-compose.full.cpu.yaml
 
 services:
-  vozlab:
-    image: ghcr.io/diegosg-dev/vozlab-server:${VOZLAB_VERSION:-latest}
-    container_name: vozlab
+  scribe:
+    image: ghcr.io/diegosg-dev/scribe-server:${SCRIBE_VERSION:-latest}
+    container_name: scribe
     restart: unless-stopped
     ports:
       - "8092:8080"
@@ -22,13 +22,14 @@ services:
       - ./data:/data
     environment:
       # the sibling ollama service, not the host
-      - VOZLAB_CLEANUP_BASE_URL=http://ollama:11434
-      - VOZLAB_CLEANUP_MODEL=${VOZLAB_CLEANUP_MODEL:-qwen2.5:7b-instruct}
+      - SCRIBE_CLEANUP_BASE_URL=http://ollama:11434
+      - SCRIBE_CLEANUP_MODEL=${SCRIBE_CLEANUP_MODEL:-qwen2.5:7b-instruct}
       # the port the app should use (the published one, not the container's 8080)
-      - VOZLAB_PUBLIC_PORT=8092
-      # set by `install.sh --tls` through ./.env; empty means plain HTTP
-      - VOZLAB_TLS_CERT=${VOZLAB_TLS_CERT:-}
-      - VOZLAB_TLS_KEY=${VOZLAB_TLS_KEY:-}
+      - SCRIBE_PUBLIC_PORT=8092
+      # set by `install.sh --tls` through ./.env; empty means plain HTTP.
+      # the VOZLAB_* fallback keeps an existing .env working after the rename
+      - SCRIBE_TLS_CERT=${SCRIBE_TLS_CERT:-${VOZLAB_TLS_CERT:-}}
+      - SCRIBE_TLS_KEY=${SCRIBE_TLS_KEY:-${VOZLAB_TLS_KEY:-}}
 
     depends_on:
       - ollama
@@ -43,7 +44,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: vozlab-ollama
+    container_name: scribe-ollama
     restart: unless-stopped
     volumes:
       - ./ollama_data:/root/.ollama
@@ -52,11 +53,11 @@ services:
   # first dictation is not stuck waiting for a model download.
   model-preload:
     image: ollama/ollama:latest
-    container_name: vozlab-model-preload
+    container_name: scribe-model-preload
     restart: "no"
     depends_on:
       - ollama
     environment:
       - OLLAMA_HOST=http://ollama:11434
-      - MODEL=${VOZLAB_CLEANUP_MODEL:-qwen2.5:7b-instruct}
+      - MODEL=${SCRIBE_CLEANUP_MODEL:-qwen2.5:7b-instruct}
     entrypoint: ["/bin/sh", "-c", "sleep 3; echo \"preloading $$MODEL...\"; ollama pull \"$$MODEL\"; echo done"]

@@ -2,10 +2,10 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
 #
-# Without it, VozLab runs on the CPU (works, but several times slower).
+# Without it, Scribe runs on the CPU (works, but several times slower).
 # install.sh adds this automatically when nvidia-smi reports a GPU.
 services:
-  vozlab:
+  scribe:
     deploy:
       resources:
         reservations:

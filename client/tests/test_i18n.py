@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vozlab import i18n  # noqa: E402
+from scribe import i18n  # noqa: E402
 
 LOCALES = i18n.LOCALES_DIR
 

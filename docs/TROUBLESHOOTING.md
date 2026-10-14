@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Check the log first: tray icon → **Open settings folder** → `vozlab.log`.
+Check the log first: tray icon → **Open settings folder** → `scribe.log`.
 Enable **Debug logging** in Settings for per-keystroke detail.
 
 ## The hotkey does nothing
@@ -62,7 +62,7 @@ Rotating the token server-side requires updating every client.
 ## The status pill is missing / in the wrong place
 
 Settings → *Show floating status pill*. Position is controlled by
-`pill_position` in `%APPDATA%\VozLab\config.json`
+`pill_position` in `%APPDATA%\Scribe\config.json`
 (`bottom-center`, `bottom-right`, `top-right`).
 
 If the pill looks off-centre or its text is cut off after moving between
@@ -72,7 +72,7 @@ latest release, which lays the pill out from real font metrics.
 ## The text isn't what I said
 
 - Dictations are logged with both versions — open the log from the tray
-  (**Open settings folder → `vozlab.log`**) and compare `raw=...` (what Whisper
+  (**Open settings folder → `scribe.log`**) and compare `raw=...` (what Whisper
   heard) with the final text (what the AI formatting produced).
 - If the *raw* text is wrong, it's an audio/accuracy problem: speak closer to the
   mic, and consider a bigger model (`whisper_model`: `small.en` for English-only
@@ -112,9 +112,9 @@ There is **no bypass** — SAC only allows apps with a valid signature. Pick one
 3. **Sign the build** — required if you want to *share* the installer: every friend
    with SAC enabled would hit the same wall. See [BUILD.md](BUILD.md#code-signing).
 
-## `vozlab` container restarts in a loop (server)
+## `scribe` container restarts in a loop (server)
 
-- Check `docker logs vozlab`: usually a missing GPU (`nvidia-smi` not working) —
+- Check `docker logs scribe`: usually a missing GPU (`nvidia-smi` not working) —
   use the CPU compose overlay, or fix the NVIDIA container toolkit.
 - Out of VRAM: switch `whisper_model` to `small.en`, or set `cleanup: false`.
 - Still stuck? `docker compose down && docker compose up -d --build`.
@@ -124,5 +124,5 @@ There is **no bypass** — SAC only allows apps with a valid signature. Pick one
 Server: stop the container, edit `server/data/config.json`, start again
 (models are cached in `server/data/hf/` and are only re-downloaded if deleted).
 
-Client: delete `%APPDATA%\VozLab\config.json` — the setup wizard runs again on
+Client: delete `%APPDATA%\Scribe\config.json` — the setup wizard runs again on
 next start.

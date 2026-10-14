@@ -30,7 +30,7 @@ jobs:
 
       - name: Byte-compile all modules
         working-directory: client
-        run: python -m compileall -q vozlab run_vozlab.py
+        run: python -m compileall -q scribe run_scribe.py
 
       - name: Unit tests
         working-directory: client
@@ -110,8 +110,8 @@ jobs:
 
       - name: The arm64 image must not contain CUDA wheels and must import clean
         run: |
-          docker build -q --platform linux/arm64 -t vozlab-arm64-check server >/dev/null
-          docker run --rm --platform linux/arm64 vozlab-arm64-check python -c "
+          docker build -q --platform linux/arm64 -t scribe-arm64-check server >/dev/null
+          docker run --rm --platform linux/arm64 scribe-arm64-check python -c "
           import importlib.util, platform
           assert platform.machine() == 'aarch64', platform.machine()
           assert importlib.util.find_spec('nvidia') is None, 'CUDA wheels leaked into arm64'

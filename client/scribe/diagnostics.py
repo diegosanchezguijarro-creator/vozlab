@@ -107,14 +107,14 @@ def write_report(directory: str, cfg: dict, log_path: str = "",
     """Write the report into `directory`; returns the path."""
     os.makedirs(directory, exist_ok=True)
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    path = os.path.join(directory, f"vozlab-diagnostics-{stamp}.txt")
+    path = os.path.join(directory, f"scribe-diagnostics-{stamp}.txt")
     with open(path, "w", encoding="utf-8") as f:
         f.write(build_report(cfg, log_path, server_health, extra, server_status))
     return path
 
 
-ISSUE_URL = ("https://github.com/diegosg-dev/vozlab/issues/new"
+ISSUE_URL = ("https://github.com/diegosg-dev/scribe/issues/new"
              "?template=bug_report.yml")
-DOCS_URL = "https://github.com/diegosg-dev/vozlab/tree/main/docs"
-TROUBLESHOOTING_URL = ("https://github.com/diegosg-dev/vozlab/"
+DOCS_URL = "https://github.com/diegosg-dev/scribe/tree/main/docs"
+TROUBLESHOOTING_URL = ("https://github.com/diegosg-dev/scribe/"
                        "blob/main/docs/TROUBLESHOOTING.md")

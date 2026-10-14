@@ -1,8 +1,8 @@
 services:
-  vozlab:
+  scribe:
     build: .
-    image: vozlab-server:latest
-    container_name: vozlab
+    image: scribe-server:latest
+    container_name: scribe
     restart: unless-stopped
     ports:
       - "8092:8080"
@@ -14,10 +14,11 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       # the port the app should use (the published one, not the container's 8080)
-      - VOZLAB_PUBLIC_PORT=8092
-      # set by `install.sh --tls` through ./.env; empty means plain HTTP
-      - VOZLAB_TLS_CERT=${VOZLAB_TLS_CERT:-}
-      - VOZLAB_TLS_KEY=${VOZLAB_TLS_KEY:-}
+      - SCRIBE_PUBLIC_PORT=8092
+      # set by `install.sh --tls` through ./.env; empty means plain HTTP.
+      # the VOZLAB_* fallback keeps an existing .env working after the rename
+      - SCRIBE_TLS_CERT=${SCRIBE_TLS_CERT:-${VOZLAB_TLS_CERT:-}}
+      - SCRIBE_TLS_KEY=${SCRIBE_TLS_KEY:-${VOZLAB_TLS_KEY:-}}
     # --- hardening ---------------------------------------------------------
     user: "1000:1000"                 # match install.sh's chown of ./data
     read_only: true                   # the container filesystem is immutable

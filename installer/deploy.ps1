@@ -10,14 +10,14 @@
         # one-liner (PowerShell):
         irm https://raw.githubusercontent.com/<repo>/main/installer/deploy.ps1 | iex
 
-        # or download VozLab.bat and run it, or:
+        # or download Scribe.bat and run it, or:
         powershell -ExecutionPolicy Bypass -File deploy.ps1
 
     Options
     -------
         -Repo <owner/name>      GitHub repository (default: the official one)
         -Version <x.y.z>        Install a specific version instead of the latest
-        -InstallDir <path>      Where to install (default %LOCALAPPDATA%\Programs\VozLab)
+        -InstallDir <path>      Where to install (default %LOCALAPPDATA%\Programs\Scribe)
         -Autostart              Start Scribe when you sign in
         -NoShortcut             Do not create Start-menu/desktop shortcuts
         -NoDesktopIcon          Only create the Start-menu shortcut
@@ -26,9 +26,9 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Repo = "diegosg-dev/vozlab",
+    [string]$Repo = "diegosg-dev/scribe",
     [string]$Version = "latest",
-    [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\VozLab'),
+    [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\Scribe'),
     [switch]$Autostart,
     [switch]$NoShortcut,
     [switch]$NoDesktopIcon,
@@ -67,7 +67,7 @@ function Get-PythonExe {
 
 function Resolve-Release {
     param([string]$Requested)
-    $headers = @{ 'User-Agent' = 'VozLab-Installer' }
+    $headers = @{ 'User-Agent' = 'Scribe-Installer' }
     if ($Requested -and $Requested -ne 'latest') {
         $ver = $Requested.TrimStart('v')
         return @{ Tag = "v$ver"; Version = $ver }
@@ -100,8 +100,8 @@ if (-not $python) {
 }
 Write-Host "  python  : $(& $python --version)"
 
-if ($InstallDir -eq (Join-Path $env:LOCALAPPDATA 'Programs\VozLab') -and
-    (Test-Path (Join-Path $InstallDir 'VozLab.exe'))) {
+if ($InstallDir -eq (Join-Path $env:LOCALAPPDATA 'Programs\Scribe') -and
+    (Test-Path (Join-Path $InstallDir 'Scribe.exe'))) {
     Write-Host ""
     Write-Host "  note: an installer-based Scribe exists in the same folder." -ForegroundColor Yellow
     Write-Host "        Uninstall it from Settings > Apps to avoid two copies listening" -ForegroundColor DarkGray
@@ -111,11 +111,11 @@ if ($InstallDir -eq (Join-Path $env:LOCALAPPDATA 'Programs\VozLab') -and
 # ----------------------------------------------------------------- download --
 $release = Resolve-Release -Requested $Version
 $ver = $release.Version
-$srcName = "VozLab-$ver-src.zip"
+$srcName = "Scribe-$ver-src.zip"
 $baseUrl = "https://github.com/$Repo/releases/download/$($release.Tag)"
 
 Write-Step "Downloading Scribe $ver"
-$tmp = Join-Path $env:TEMP ("vozlab-install-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$tmp = Join-Path $env:TEMP ("scribe-install-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 $zipPath = Join-Path $tmp $srcName
 try {
@@ -149,7 +149,7 @@ Write-Step "Installing to $InstallDir"
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 
 # stop a running copy that lives in this folder
-Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe' OR Name='VozLab.exe'" -ErrorAction SilentlyContinue |
+Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe' OR Name='Scribe.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.CommandLine -and $_.CommandLine -like "*$InstallDir*" } |
     ForEach-Object {
         Write-Host "  stopping running instance ($($_.ProcessId))..."
@@ -160,8 +160,8 @@ $appDir = Join-Path $InstallDir 'app'
 if (Test-Path $appDir) { Remove-Item -Recurse -Force $appDir }
 
 Expand-Archive -Path $zipPath -DestinationPath $tmp -Force
-$inner = Join-Path $tmp 'VozLab'
-if (-not (Test-Path $inner)) { Fail "unexpected archive layout (no VozLab folder)." }
+$inner = Join-Path $tmp 'Scribe'
+if (-not (Test-Path $inner)) { Fail "unexpected archive layout (no Scribe folder)." }
 Move-Item -Path $inner -Destination $appDir
 
 # -------------------------------------------------------------------- venv ---
@@ -183,7 +183,7 @@ if ($LASTEXITCODE -ne 0) { Fail "dependency installation failed." }
 Write-Host "  dependencies OK" -ForegroundColor Green
 
 # --------------------------------------------------------------- shortcuts ---
-$entryScript = Join-Path $appDir 'client\run_vozlab.py'
+$entryScript = Join-Path $appDir 'client\run_scribe.py'
 $iconPath = Join-Path $appDir 'client\assets\icon.ico'
 Set-Content -Path (Join-Path $InstallDir 'version.txt') -Value $release.Tag -Encoding ascii
 Copy-Item -Path $PSCommandPath -Destination (Join-Path $InstallDir 'deploy.ps1') -Force -ErrorAction SilentlyContinue
@@ -196,8 +196,8 @@ if (-not $NoShortcut) {
     Write-Step "Creating shortcuts"
     $shell = New-Object -ComObject WScript.Shell
     $targets = @()
-    $targets += Join-Path ([Environment]::GetFolderPath('Programs')) 'VozLab.lnk'
-    if (-not $NoDesktopIcon) { $targets += Join-Path ([Environment]::GetFolderPath('Desktop')) 'VozLab.lnk' }
+    $targets += Join-Path ([Environment]::GetFolderPath('Programs')) 'Scribe.lnk'
+    if (-not $NoDesktopIcon) { $targets += Join-Path ([Environment]::GetFolderPath('Desktop')) 'Scribe.lnk' }
 
     foreach ($path in $targets) {
         $link = $shell.CreateShortcut($path)
@@ -211,10 +211,27 @@ if (-not $NoShortcut) {
     }
 }
 
+# --- cleanup left over from the rename (VozLab -> Scribe) --------------------
+$legacyLinks = @(
+    (Join-Path ([Environment]::GetFolderPath('Programs')) 'VozLab.lnk'),
+    (Join-Path ([Environment]::GetFolderPath('Desktop')) 'VozLab.lnk')
+)
+foreach ($old in $legacyLinks) {
+    if (Test-Path $old) {
+        Remove-Item $old -Force -ErrorAction SilentlyContinue
+        Write-Host "  removed old shortcut $old"
+    }
+}
+$runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+if (Get-ItemProperty -Path $runKey -Name 'VozLab' -ErrorAction SilentlyContinue) {
+    Remove-ItemProperty -Path $runKey -Name 'VozLab' -ErrorAction SilentlyContinue
+    Write-Host "  removed old startup entry 'VozLab'"
+}
+
 if ($Autostart) {
     Write-Step "Enabling start with Windows"
     $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-    Set-ItemProperty -Path $runKey -Name 'VozLab' -Value ('"' + $venvPythonW + '" "' + $entryScript + '"')
+    Set-ItemProperty -Path $runKey -Name 'Scribe' -Value ('"' + $venvPythonW + '" "' + $entryScript + '"')
     Write-Host "  registry Run entry added"
 }
 
@@ -223,8 +240,8 @@ Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 Write-Host ""
 Write-Host "  Scribe $ver installed" -ForegroundColor Green
 Write-Host "  app     : $appDir\client"
-Write-Host "  settings: $env:APPDATA\VozLab\config.json"
-Write-Host "  logs    : $env:APPDATA\VozLab\vozlab.log"
+Write-Host "  settings: $env:APPDATA\Scribe\config.json"
+Write-Host "  logs    : $env:APPDATA\Scribe\scribe.log"
 Write-Host ""
 Write-Host "  Update later with:  powershell -ExecutionPolicy Bypass -File `"$InstallDir\update.ps1`""
 

@@ -11,7 +11,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vozlab import discovery, profiles  # noqa: E402
+from scribe import discovery, profiles  # noqa: E402
 
 
 # ------------------------------------------------------------------ profiles --
@@ -78,7 +78,7 @@ def test_describe_rules_is_sorted_and_normalized():
 
 
 def test_foreground_helpers_are_safe_off_windows():
-    from vozlab import foreground
+    from scribe import foreground
     if foreground.available():
         pytest.skip("this is Windows: the real calls are exercised by the app")
     assert foreground.foreground_app() == ""
@@ -91,7 +91,7 @@ def test_foreground_helpers_are_safe_off_windows():
 
 
 def test_parse_reply_accepts_a_real_answer():
-    raw = json.dumps({"name": "vozlab", "version": "1.4.0", "port": 8092,
+    raw = json.dumps({"name": "scribe", "version": "1.4.0", "port": 8092,
                       "tls": True, "whisper_model": "small", "device": "cuda"}).encode()
     entry = discovery.parse_reply(raw, "192.168.0.23")
     assert entry["url"] == "https://192.168.0.23:8092"
@@ -106,7 +106,7 @@ def test_parse_reply_ignores_foreign_and_broken_packets():
 
 
 def test_parse_reply_defaults_to_plain_http():
-    raw = json.dumps({"name": "vozlab"}).encode()
+    raw = json.dumps({"name": "scribe"}).encode()
     entry = discovery.parse_reply(raw, "10.0.0.5")
     assert entry["url"] == "http://10.0.0.5:8092"
     assert entry["tls"] is False
@@ -128,7 +128,7 @@ def fake_server():
             except (socket.timeout, OSError):
                 continue
             if data.startswith(discovery.MAGIC):
-                sock.sendto(json.dumps({"name": "vozlab", "port": 8092,
+                sock.sendto(json.dumps({"name": "scribe", "port": 8092,
                                         "tls": False, "version": "1.4.0"}).encode(), addr)
 
     thread = threading.Thread(target=serve, daemon=True)
@@ -190,7 +190,7 @@ def tls_server(tmp_path_factory):
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
-            body = b'{"ok": true, "name": "vozlab", "version": "1.4.0"}'
+            body = b'{"ok": true, "name": "scribe", "version": "1.4.0"}'
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -214,7 +214,7 @@ def tls_server(tmp_path_factory):
 def test_fetch_fingerprint_matches_the_certificate(tls_server):
     import hashlib
 
-    from vozlab.api import fetch_fingerprint, format_fingerprint
+    from scribe.api import fetch_fingerprint, format_fingerprint
     fingerprint = fetch_fingerprint("127.0.0.1", tls_server["port"])
     der = subprocess.run([OPENSSL, "x509", "-in", str(tls_server["cert"]), "-outform", "DER"],
                          check=True, capture_output=True).stdout
@@ -224,16 +224,16 @@ def test_fetch_fingerprint_matches_the_certificate(tls_server):
 
 
 def test_pinned_request_succeeds_with_the_right_certificate(tls_server):
-    from vozlab.api import VozLabAPI, fetch_fingerprint
+    from scribe.api import ScribeAPI, fetch_fingerprint
     fingerprint = fetch_fingerprint("127.0.0.1", tls_server["port"])
-    api = VozLabAPI(f"https://127.0.0.1:{tls_server['port']}", "token", fingerprint=fingerprint)
+    api = ScribeAPI(f"https://127.0.0.1:{tls_server['port']}", "token", fingerprint=fingerprint)
     assert api.health()["ok"] is True
 
 
 def test_pinned_request_rejects_a_different_certificate(tls_server):
-    from vozlab.api import ApiError, VozLabAPI
+    from scribe.api import ApiError, ScribeAPI
     # a pin that is not this certificate's fingerprint must be refused
-    api = VozLabAPI(f"https://127.0.0.1:{tls_server['port']}", "token",
+    api = ScribeAPI(f"https://127.0.0.1:{tls_server['port']}", "token",
                     fingerprint="ab" * 32)
     with pytest.raises(ApiError) as err:
         api.health()
@@ -242,13 +242,13 @@ def test_pinned_request_rejects_a_different_certificate(tls_server):
 
 def test_https_without_a_pin_is_not_silently_accepted(tls_server):
     """No pin = no protection, so the CA check must be the one that fails."""
-    from vozlab.api import ApiError, VozLabAPI
-    api = VozLabAPI(f"https://127.0.0.1:{tls_server['port']}", "token")
+    from scribe.api import ApiError, ScribeAPI
+    api = ScribeAPI(f"https://127.0.0.1:{tls_server['port']}", "token")
     with pytest.raises(ApiError):
         api.health()          # self-signed + no pin -> refused
 
 
 def test_http_ignores_the_pin():
-    from vozlab.api import VozLabAPI
-    api = VozLabAPI("http://127.0.0.1:9", "token", fingerprint="ab" * 32)
+    from scribe.api import ScribeAPI
+    api = ScribeAPI("http://127.0.0.1:9", "token", fingerprint="ab" * 32)
     assert isinstance(api.session.adapters["http://"], object)   # still a normal session

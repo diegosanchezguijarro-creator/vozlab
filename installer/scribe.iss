@@ -1,14 +1,14 @@
-; VozLab — Inno Setup installer script
-; Build:  ISCC.exe /DAppVersion=1.0.0 vozlab.iss
-; Output: output\VozLab-Setup-<version>.exe  (per-user install, no admin prompt)
+; Scribe — Inno Setup installer script
+; Build:  ISCC.exe /DAppVersion=1.0.0 scribe.iss
+; Output: output\Scribe-Setup-<version>.exe  (per-user install, no admin prompt)
 
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
 
-#define AppName "VozLab"
-#define AppPublisher "VozLab"
-#define AppExeName "VozLab.exe"
+#define AppName "Scribe"
+#define AppPublisher "Scribe"
+#define AppExeName "Scribe.exe"
 
 [Setup]
 AppId={{8E1F5C74-2B93-4A17-9C6E-7A1D5B4F0C21}
@@ -16,14 +16,14 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
-AppSupportURL=https://github.com/vozlab/vozlab
+AppSupportURL=https://github.com/scribe/scribe
 DefaultDirName={localappdata}\Programs\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 PrivilegesRequired=lowest
 OutputDir=output
-OutputBaseFilename=VozLab-Setup-{#AppVersion}
+OutputBaseFilename=Scribe-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -42,7 +42,7 @@ Name: "autostart"; Description: "Start {#AppName} automatically when I sign in";
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\client\dist\VozLab\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\client\dist\Scribe\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
@@ -59,4 +59,4 @@ Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(
     Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-Filename: "{cmd}"; Parameters: "/c taskkill /IM {#AppExeName} /F"; Flags: runhidden; RunOnceId: "KillVozLab"
+Filename: "{cmd}"; Parameters: "/c taskkill /IM {#AppExeName} /F"; Flags: runhidden; RunOnceId: "KillScribe"

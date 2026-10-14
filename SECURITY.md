@@ -15,7 +15,7 @@ reporting, since fixes ship there first.
 - Or email the maintainer listed on the repository profile.
 
 Include: what you did, what happened, what you expected, and the version numbers
-(`vozlab.log` has the client version; `docker logs vozlab` prints the server
+(`scribe.log` has the client version; `docker logs scribe` prints the server
 version at startup — the token is only printed once, when it is created). A proof-of-concept helps enormously.
 
 You can expect an acknowledgement within a few days, an assessment with a rough
@@ -28,7 +28,7 @@ These are documented, deliberate trade-offs — see [docs/PRIVACY.md](docs/PRIVA
 - The API uses **plain HTTP with a bearer token** and is intended for a trusted
   LAN. Exposing port 8092 to the internet is not supported; use a VPN
   ([docs/REMOTE.md](docs/REMOTE.md)).
-- The token is stored **unencrypted** in `%APPDATA%\VozLab\config.json`; anyone
+- The token is stored **unencrypted** in `%APPDATA%\Scribe\config.json`; anyone
   who can read your files can read the token. DPAPI storage is on the roadmap.
 - `/health` is unauthenticated and reveals the model name, device and version.
 - Audio is unencrypted on the LAN while in transit.

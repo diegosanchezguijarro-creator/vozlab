@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# VozLab — publish this repository to GitHub and cut the first release.
+# Scribe — publish this repository to GitHub and cut the first release.
 #
 #   1) authenticate once:   gh auth login --hostname github.com --git-protocol https --web
 #   2) publish:             bash tools/publish.sh
 #
-# The script pushes main, creates the vX.Y.Z tag matching client/vozlab/__init__.py,
+# The script pushes main, creates the vX.Y.Z tag matching client/scribe/__init__.py,
 # and lets GitHub Actions build the Windows installer.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 REPO_ROOT="$(pwd)"
-REPO_NAME="${REPO_NAME:-vozlab}"
+REPO_NAME="${REPO_NAME:-scribe}"
 VISIBILITY="--public"
 [[ "${1:-}" == "--private" ]] && VISIBILITY="--private"
 
@@ -41,7 +41,7 @@ say "Authenticated as $GH_USER"
 # ------------------------------------------------------- commit identity ----
 current_name="$(git config user.name || true)"
 current_email="$(git config user.email || true)"
-if [[ "$current_name" == "VozLab" || -z "$current_name" ]]; then
+if [[ "$current_name" == "Scribe" || -z "$current_name" ]]; then
   say "Setting git identity to your GitHub account"
   git config user.name "$GH_USER"
   git config user.email "${GH_ID}+${GH_USER}@users.noreply.github.com"
@@ -77,13 +77,13 @@ else
 fi
 
 # -------------------------------------------------------------------- tag ----
-VERSION="$(python3 -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("client/vozlab/__init__.py").read()).group(1))')"
+VERSION="$(python3 -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("client/scribe/__init__.py").read()).group(1))')"
 TAG="v$VERSION"
 say "Version in code: $VERSION"
 if git rev-parse "$TAG" >/dev/null 2>&1; then
   echo "  tag $TAG already exists locally"
 else
-  git tag -a "$TAG" -m "VozLab $VERSION"
+  git tag -a "$TAG" -m "Scribe $VERSION"
   echo "  created tag $TAG"
 fi
 git push origin "$TAG"
@@ -100,7 +100,7 @@ $(printf '\033[1;32m')
   Releases   : https://github.com/$GH_USER/$REPO_NAME/releases
   Build logs : https://github.com/$GH_USER/$REPO_NAME/actions
 
-  GitHub Actions is now building VozLab-Setup-$VERSION.exe (a few minutes).
+  GitHub Actions is now building Scribe-Setup-$VERSION.exe (a few minutes).
   Watch it with:   gh run watch
   When it finishes, download the installer from the Releases page and
   install it on your Windows laptop.

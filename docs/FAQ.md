@@ -31,7 +31,7 @@ English-only dictation `small.en` is faster and more accurate.
 ### Why did it type something I didn't say?
 
 Two different causes, and the log tells them apart: open the log from the tray
-(*Open settings folder → `vozlab.log`*).
+(*Open settings folder → `scribe.log`*).
 
 - `raw=…` is wrong → Whisper mis-heard. Speak closer to the mic, check the input
   device, or move to a bigger model (`medium`).
@@ -48,14 +48,14 @@ work. For a group, run one server per household.
 
 ### Does the client work on macOS or Linux?
 
-Not officially yet. It's plain Python, so `python run_vozlab.py` runs on
+Not officially yet. It's plain Python, so `python run_scribe.py` runs on
 Linux/macOS for development, but text insertion uses Windows-specific behaviour
 (`Ctrl+V`, registry autostart). Linux/macOS support is on the roadmap.
 
 ### How do I uninstall it?
 
 - **Client**: `Settings → Apps → Scribe → Uninstall` (installer builds), or delete
-  `%LOCALAPPDATA%\Programs\VozLab` and `%APPDATA%\VozLab` (source installs), plus
+  `%LOCALAPPDATA%\Programs\Scribe` and `%APPDATA%\Scribe` (source installs), plus
   the Start-menu shortcut.
 - **Server**: `docker compose down` in `server/`, then delete the folder. Add
   `--volumes` if you used the all-in-one stack and want the model cache gone too.
@@ -84,6 +84,6 @@ README; it works even with SAC enabled.
 
 ### Something else?
 
-[Open an issue](https://github.com/diegosg-dev/vozlab/issues) or
+[Open an issue](https://github.com/diegosg-dev/scribe/issues) or
 check [Troubleshooting](TROUBLESHOOTING.md) first — most questions are answered
 there.

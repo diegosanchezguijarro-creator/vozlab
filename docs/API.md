@@ -25,13 +25,13 @@ that helps an unauthenticated scanner (no models, no device, no settings):
 ```
 
 Set `"expose_details": true` in `server/data/config.json` (or
-`VOZLAB_...`) to get the verbose pre-1.3 response back. The full picture lives at
+`SCRIBE_...`) to get the verbose pre-1.3 response back. The full picture lives at
 `/status`, behind the token.
 
 ## `GET /version`
 
 ```json
-{ "name": "vozlab", "version": "1.4.0", "api": 1 }
+{ "name": "scribe", "version": "1.4.0", "api": 1 }
 ```
 
 The client compares `version` with its own and warns when major.minor differ, so
@@ -43,7 +43,7 @@ Everything the desktop app shows on its Server tab, in one call (authenticated):
 
 ```json
 {
-  "name": "vozlab", "version": "1.4.0", "api": 1,
+  "name": "scribe", "version": "1.4.0", "api": 1,
   "whisper_model": "small", "language": "auto",
   "cleanup": true, "cleanup_model": "qwen2.5:7b-instruct",
   "device": "cuda", "uptime_s": 812, "requests": 24,
@@ -110,7 +110,7 @@ was applied.
 | `401` | missing/incorrect token | tells the user to copy the token again |
 | `413` | audio over 25 MB | reports the recording was too long |
 | `422` | decoding/transcription failed | surfaces the message, keeps running |
-| `429` | more than `VOZLAB_RATE_LIMIT` requests/minute (default 120) | asks the user to retry shortly |
+| `429` | more than `SCRIBE_RATE_LIMIT` requests/minute (default 120) | asks the user to retry shortly |
 
 ## Server settings (the "unified settings" API)
 
@@ -199,16 +199,16 @@ way — rotate it by editing the file and restarting.
 ## LAN discovery (UDP, not HTTP)
 
 The app can find the server without being told an IP address. Send
-`VOZLAB/1 discover\n` to UDP **8093** (broadcast, or the subnet broadcast
+`SCRIBE/1 discover\n` to UDP **8093** (broadcast, or the subnet broadcast
 address) and every Scribe server on the network answers with a small JSON object:
 
 ```json
-{ "name": "vozlab", "version": "1.4.0", "api": 1, "port": 8092,
+{ "name": "scribe", "version": "1.4.0", "api": 1, "port": 8092,
   "tls": false, "whisper_model": "small", "device": "cuda" }
 ```
 
 There is **no token and no settings** in the reply, so discovery cannot be used to
-dictate. Disable it with `VOZLAB_DISCOVERY_PORT=0` (or `"discovery": false`).
+dictate. Disable it with `SCRIBE_DISCOVERY_PORT=0` (or `"discovery": false`).
 
 ## Example: fully scripted setup
 

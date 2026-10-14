@@ -66,7 +66,7 @@ class TrayIcon:
             return bool(self.paused)
 
         self._icon = pystray.Icon(
-            "vozlab",
+            "scribe",
             icon=make_icon(self.state),
             title=tr("app_name"),
             menu=pystray.Menu(

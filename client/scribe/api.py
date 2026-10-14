@@ -77,7 +77,7 @@ def _classify(exc: Exception) -> ApiError:
     return ApiError("unreachable", text[:300])
 
 
-class VozLabAPI:
+class ScribeAPI:
     def __init__(self, base_url: str, token: str, timeout: int = 120,
                  fingerprint: str = ""):
         self.base_url = (base_url or "").rstrip("/")
@@ -93,7 +93,7 @@ class VozLabAPI:
         return {
             "Authorization": f"Bearer {self.token}",
             "Content-Type": content_type,
-            "User-Agent": f"VozLab/{VERSION}",
+            "User-Agent": f"Scribe/{VERSION}",
         }
 
     def _get(self, path: str, timeout: int = 5) -> dict:

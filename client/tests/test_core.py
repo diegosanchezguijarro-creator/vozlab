@@ -15,8 +15,8 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vozlab import config as cfgmod  # noqa: E402
-from vozlab import i18n  # noqa: E402
+from scribe import config as cfgmod  # noqa: E402
+from scribe import i18n  # noqa: E402
 
 
 # ---------------------------------------------------------------- config ----
@@ -126,8 +126,8 @@ def _fake_requests(monkeypatch, status=200, payload=None, raise_exc=None):
 
 def test_api_health_ok(monkeypatch):
     calls = _fake_requests(monkeypatch, payload={"ok": True, "whisper_model": "small"})
-    from vozlab.api import VozLabAPI
-    health = VozLabAPI("http://h:8092", "tok").health()
+    from scribe.api import ScribeAPI
+    health = ScribeAPI("http://h:8092", "tok").health()
     assert health["ok"] is True
     assert calls["url"] == "http://h:8092/health"
     assert calls["headers"]["Authorization"] == "Bearer tok"
@@ -136,8 +136,8 @@ def test_api_health_ok(monkeypatch):
 def test_api_transcribe_params(monkeypatch):
     calls = _fake_requests(monkeypatch, payload={"text": "hola", "raw_text": "hola",
                                                  "timings": {"total_s": 1.0}})
-    from vozlab.api import VozLabAPI
-    out = VozLabAPI("http://h:8092", "tok").transcribe(b"RIFFdata", cleanup=False, language="es")
+    from scribe.api import ScribeAPI
+    out = ScribeAPI("http://h:8092", "tok").transcribe(b"RIFFdata", cleanup=False, language="es")
     assert out["text"] == "hola"
     assert calls["params"] == {"cleanup": "false", "language": "es"}
     assert calls["data_len"] == len(b"RIFFdata")
@@ -146,26 +146,26 @@ def test_api_transcribe_params(monkeypatch):
 @pytest.mark.parametrize("status,kind", [(401, "bad_token"), (500, "server")])
 def test_api_error_mapping(monkeypatch, status, kind):
     _fake_requests(monkeypatch, status=status, payload={"detail": "nope"})
-    from vozlab.api import ApiError, VozLabAPI
+    from scribe.api import ApiError, ScribeAPI
     with pytest.raises(ApiError) as err:
-        VozLabAPI("http://h:8092", "tok").health()
+        ScribeAPI("http://h:8092", "tok").health()
     assert err.value.kind == kind
 
 
 def test_api_too_large_maps_to_other(monkeypatch):
     _fake_requests(monkeypatch, status=413, payload={"detail": "too big"})
-    from vozlab.api import ApiError, VozLabAPI
+    from scribe.api import ApiError, ScribeAPI
     with pytest.raises(ApiError) as err:
-        VozLabAPI("http://h:8092", "tok").transcribe(b"RIFF" * 10)
+        ScribeAPI("http://h:8092", "tok").transcribe(b"RIFF" * 10)
     assert err.value.kind == "other"
 
 
 def test_api_unreachable(monkeypatch):
     import requests as real_requests
     _fake_requests(monkeypatch, raise_exc=real_requests.ConnectionError("boom"))
-    from vozlab.api import ApiError, VozLabAPI
+    from scribe.api import ApiError, ScribeAPI
     with pytest.raises(ApiError) as err:
-        VozLabAPI("http://h:8092", "tok").health()
+        ScribeAPI("http://h:8092", "tok").health()
     assert err.value.kind == "unreachable"
 
 
@@ -184,7 +184,7 @@ def hotkeys_mod(monkeypatch):
     monkeypatch.setitem(sys.modules, "keyboard", kb)
     import importlib
 
-    from vozlab import hotkeys
+    from scribe import hotkeys
     importlib.reload(hotkeys)
     return hotkeys
 
@@ -242,7 +242,7 @@ def test_describe_hotkey(hotkeys_mod):
 def test_to_wav_is_valid_riff():
     import wave
 
-    from vozlab.audio import _to_wav
+    from scribe.audio import _to_wav
 
     frames = [b"\x00\x00\x00\x00" * 1600]  # 0.1s of silence
     data = _to_wav(frames, 16000)
@@ -262,7 +262,7 @@ def _pcm(value: float, samples: int = 100) -> bytes:
 
 
 def test_auto_stop_fires_after_silence():
-    from vozlab.audio import Recorder
+    from scribe.audio import Recorder
 
     fired = []
     rec = Recorder(auto_stop=True, silence_ms=0, silence_rms=0.01,
@@ -278,7 +278,7 @@ def test_auto_stop_fires_after_silence():
 
 
 def test_auto_stop_ignores_leading_silence():
-    from vozlab.audio import Recorder
+    from scribe.audio import Recorder
 
     fired = []
     rec = Recorder(auto_stop=True, silence_ms=0, silence_rms=0.01,
@@ -290,7 +290,7 @@ def test_auto_stop_ignores_leading_silence():
 
 
 def test_recorder_duration_and_max_seconds():
-    from vozlab.audio import Recorder
+    from scribe.audio import Recorder
 
     rec = Recorder(max_seconds=1, auto_stop=False)
     rec._recording = True
@@ -308,7 +308,7 @@ def test_duration_survives_stop():
     import io
     import wave
 
-    from vozlab.audio import Recorder
+    from scribe.audio import Recorder
 
     rec = Recorder(max_seconds=60, auto_stop=False)
     rec._recording = True
@@ -327,7 +327,7 @@ def test_duration_survives_stop():
 
 
 def test_stop_twice_is_safe_and_keeps_duration():
-    from vozlab.audio import Recorder
+    from scribe.audio import Recorder
 
     rec = Recorder(max_seconds=60)
     rec._recording = True
@@ -340,7 +340,7 @@ def test_stop_twice_is_safe_and_keeps_duration():
 
 
 def test_cancel_resets_duration():
-    from vozlab.audio import Recorder
+    from scribe.audio import Recorder
 
     rec = Recorder(max_seconds=60)
     rec._recording = True
@@ -351,11 +351,11 @@ def test_cancel_resets_duration():
 
 # ----------------------------------------------------------- diagnostics ----
 def test_diagnostics_redacts_transcripts_and_token(tmp_path):
-    from vozlab import diagnostics
+    from scribe import diagnostics
 
-    log = tmp_path / "vozlab.log"
+    log = tmp_path / "scribe.log"
     log.write_text(
-        "2026-10-13 10:00:00 VozLab 1.1.2 starting\n"
+        "2026-10-13 10:00:00 Scribe 1.1.2 starting\n"
         "2026-10-13 10:00:05 dictation (0.42s): my bank password is hunter2\n"
         "2026-10-13 10:00:06 [dbg] transcribed in 0.42s raw='um my bank password is hunter2' final='My bank password is hunter2.'\n"
         "2026-10-13 10:00:07 server ok {'version': '1.1.2'}\n",
@@ -375,18 +375,18 @@ def test_diagnostics_redacts_transcripts_and_token(tmp_path):
     # useful information must survive
     assert "192.168.0.23" in report
     assert "whisper_model" in report and "cuda" in report
-    assert "VozLab 1.1.2 starting" in report
+    assert "Scribe 1.1.2 starting" in report
 
 
 def test_diagnostics_handles_missing_log(tmp_path):
-    from vozlab import diagnostics
+    from scribe import diagnostics
 
     report = diagnostics.build_report({"token": "x"}, log_path=str(tmp_path / "nope.log"))
     assert "(no log file)" in report
 
 
 def test_diagnostics_write_report(tmp_path):
-    from vozlab import diagnostics
+    from scribe import diagnostics
 
     path = diagnostics.write_report(str(tmp_path), {"token": "x", "beeps": False})
     assert os.path.exists(path)
@@ -397,7 +397,7 @@ def test_diagnostics_write_report(tmp_path):
 
 # ------------------------------------------------------------- updater ------
 def test_version_parsing():
-    from vozlab.updater import parse_version
+    from scribe.updater import parse_version
 
     assert parse_version("v1.2.3") == (1, 2, 3)
     assert parse_version("1.2.3") == (1, 2, 3)
@@ -408,7 +408,7 @@ def test_version_parsing():
 
 
 def test_is_newer():
-    from vozlab.updater import is_newer
+    from scribe.updater import is_newer
 
     assert is_newer("1.1.1", "1.1.0")
     assert is_newer("1.2.0", "1.1.9")
@@ -419,7 +419,7 @@ def test_is_newer():
 
 
 def test_version_mismatch_only_cares_about_major_minor():
-    from vozlab.updater import version_mismatch
+    from scribe.updater import version_mismatch
 
     assert not version_mismatch("1.1.2", "1.1.9")      # patch drift is fine
     assert version_mismatch("1.0.0", "1.1.0")
@@ -428,7 +428,7 @@ def test_version_mismatch_only_cares_about_major_minor():
 
 
 def test_updater_check_returns_none_when_current(monkeypatch):
-    from vozlab import updater
+    from scribe import updater
 
     monkeypatch.setattr(updater, "latest_release",
                         lambda repo=updater.DEFAULT_REPO, timeout=8.0: {
@@ -441,7 +441,7 @@ def test_updater_check_returns_none_when_current(monkeypatch):
 def test_updater_raises_friendly_error(monkeypatch):
     import requests
 
-    from vozlab import updater
+    from scribe import updater
 
     def boom(*_a, **_k):
         raise requests.ConnectionError("no internet")
@@ -452,7 +452,7 @@ def test_updater_raises_friendly_error(monkeypatch):
 
 
 def test_update_check_is_off_by_default():
-    from vozlab import config as cfgmod
+    from scribe import config as cfgmod
 
     assert cfgmod.DEFAULTS["check_updates"] is False, \
         "zero telemetry: no network calls unless the user opts in"
@@ -460,5 +460,5 @@ def test_update_check_is_off_by_default():
 
 # ------------------------------------------------------------- packaging ----
 def test_version_exposed():
-    from vozlab import VERSION
+    from scribe import VERSION
     assert VERSION.count(".") == 2

@@ -63,7 +63,7 @@ def _pcm(value: float, samples: int = 320) -> bytes:
 def test_recorder_cycles_do_not_leak_streams(fake_sd):
     import importlib
 
-    import vozlab.audio as audio
+    import scribe.audio as audio
     importlib.reload(audio)
 
     rec = audio.Recorder(max_seconds=30, auto_stop=False)
@@ -80,7 +80,7 @@ def test_recorder_cycles_do_not_leak_streams(fake_sd):
 def test_recorder_start_stop_does_not_leak_threads(fake_sd):
     import importlib
 
-    import vozlab.audio as audio
+    import scribe.audio as audio
     importlib.reload(audio)
 
     rec = audio.Recorder(max_seconds=30, auto_stop=False)
@@ -101,7 +101,7 @@ def test_recorder_start_stop_does_not_leak_threads(fake_sd):
 def test_cancelled_recordings_release_their_buffers(fake_sd):
     import importlib
 
-    import vozlab.audio as audio
+    import scribe.audio as audio
     importlib.reload(audio)
 
     rec = audio.Recorder(max_seconds=30, auto_stop=False)
@@ -129,7 +129,7 @@ def test_auto_stop_callback_does_not_block_the_audio_thread(fake_sd):
     """The callback fires on a helper thread; the audio callback returns at once."""
     import importlib
 
-    import vozlab.audio as audio
+    import scribe.audio as audio
     importlib.reload(audio)
 
     done = threading.Event()
@@ -157,7 +157,7 @@ def hotkeys_mod(monkeypatch):
     monkeypatch.setitem(sys.modules, "keyboard", kb)
     import importlib
 
-    from vozlab import hotkeys
+    from scribe import hotkeys
     importlib.reload(hotkeys)
     return hotkeys
 

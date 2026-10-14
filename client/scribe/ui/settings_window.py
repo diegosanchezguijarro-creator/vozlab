@@ -19,7 +19,7 @@ import customtkinter as ctk
 from .. import DISPLAY_NAME, VERSION
 from .. import audio, config as cfgmod, diagnostics, log
 from .. import hotkeys as hotkeys_mod
-from ..api import ApiError, VozLabAPI
+from ..api import ApiError, ScribeAPI
 from . import theme, widgets
 
 LANGUAGES = ["auto", "en", "es", "fr", "de", "it", "pt", "nl", "ru", "ja", "zh",
@@ -218,10 +218,10 @@ class SettingsWindow:
             border_color=theme.BORDER, command=command)
         return btn
 
-    def _new_api(self) -> VozLabAPI:
+    def _new_api(self) -> ScribeAPI:
         cfg = dict(self.cfg)
         cfgmod.parse_server_url(self.server_field.get(), cfg)
-        return VozLabAPI(cfgmod.server_url(cfg), self.token_field.get())
+        return ScribeAPI(cfgmod.server_url(cfg), self.token_field.get())
 
     # -------------------------------------------------------------- dictation --
     def _build_dictation(self, parent):
@@ -1137,7 +1137,7 @@ class SettingsWindow:
         try:
             cfg = self._collect()
             cfg.pop("token", None)                 # never export the secret
-            path = os.path.join(cfgmod.config_dir(), "vozlab-settings.json")
+            path = os.path.join(cfgmod.config_dir(), "scribe-settings.json")
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(cfg, f, indent=2, sort_keys=True)
                 f.write("\n")
@@ -1149,7 +1149,7 @@ class SettingsWindow:
 
     def _import_settings(self):
         tr = self.app.tr
-        path = os.path.join(cfgmod.config_dir(), "vozlab-settings.json")
+        path = os.path.join(cfgmod.config_dir(), "scribe-settings.json")
         try:
             with open(path, encoding="utf-8") as f:
                 imported = json.load(f)
@@ -1187,7 +1187,7 @@ class SettingsWindow:
             cfg = self._collect()
             path = diagnostics.write_report(
                 cfgmod.config_dir(), cfg,
-                log_path=os.path.join(cfgmod.config_dir(), "vozlab.log"),
+                log_path=os.path.join(cfgmod.config_dir(), "scribe.log"),
                 server_status=self.server_status,
                 server_health=getattr(self.app, "last_server_health", None),
             )

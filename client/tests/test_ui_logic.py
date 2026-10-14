@@ -8,8 +8,8 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vozlab import config as cfgmod  # noqa: E402
-from vozlab.ui import theme  # noqa: E402
+from scribe import config as cfgmod  # noqa: E402
+from scribe.ui import theme  # noqa: E402
 
 
 # ---------------------------------------------------------------- palette --
@@ -73,7 +73,7 @@ def fake_sd(monkeypatch):
 
     import importlib
 
-    import vozlab.audio as audio
+    import scribe.audio as audio
     importlib.reload(audio)
     return audio
 
@@ -104,7 +104,7 @@ def test_a_vanished_device_falls_back_to_the_system_default(fake_sd):
 def test_devices_without_a_backend_return_empty(monkeypatch):
     import importlib
 
-    import vozlab.audio as audio
+    import scribe.audio as audio
     monkeypatch.setattr(audio, "sd", None)
     importlib.reload(audio)
     assert audio.list_input_devices() == []
@@ -128,7 +128,7 @@ def tray_mod(monkeypatch):
 
     import importlib
 
-    from vozlab import tray
+    from scribe import tray
     importlib.reload(tray)
     return tray
 
@@ -173,7 +173,7 @@ def test_every_config_default_survives_a_json_roundtrip(tmp_path, monkeypatch):
 def test_paste_shortcut_is_platform_aware(monkeypatch):
     import importlib
 
-    from vozlab import platform_info
+    from scribe import platform_info
 
     monkeypatch.setattr(platform_info.sys, "platform", "darwin")
     importlib.reload(platform_info)
@@ -197,8 +197,8 @@ def test_paste_shortcut_is_platform_aware(monkeypatch):
 
 
 def test_diagnostics_mention_capabilities(tmp_path, monkeypatch):
-    from vozlab import config as cfgmod
-    from vozlab import diagnostics
+    from scribe import config as cfgmod
+    from scribe import diagnostics
 
     report = diagnostics.build_report(dict(cfgmod.DEFAULTS), extra={"os": "test"})
     assert "Capabilities" in report
@@ -210,7 +210,7 @@ def test_diagnostics_mention_capabilities(tmp_path, monkeypatch):
 
 def test_ellipsize_keeps_short_text_and_trims_long_text():
     """The pill label must fit its box instead of being clipped."""
-    from vozlab.ui import pill
+    from scribe.ui import pill
 
     def measure(text: str) -> int:
         return len(text) * 7
@@ -223,7 +223,7 @@ def test_ellipsize_keeps_short_text_and_trims_long_text():
 
 
 def test_ellipsize_never_overflows_an_empty_budget():
-    from vozlab.ui import pill
+    from scribe.ui import pill
 
     assert pill._ellipsize("hello", 0, lambda s: len(s) * 7) == ""
     assert pill._ellipsize("hello", 3, lambda s: len(s) * 7) == ""
@@ -232,12 +232,17 @@ def test_ellipsize_never_overflows_an_empty_budget():
 # --------------------------------------------------------------- branding --
 
 
-def test_rename_keeps_stable_identifiers():
-    """The product name may change; these must not, or users lose their setup."""
-    from vozlab import APP_ID, APP_NAME, DISPLAY_NAME
-    from vozlab import secretstore
+def test_branding_and_legacy_identifiers():
+    """Everything reads Scribe now; the pre-rename names stay readable."""
+    from scribe import APP_ID, APP_NAME, DISPLAY_NAME
+    from scribe import config as cfgmod
+    from scribe import secretstore
 
     assert DISPLAY_NAME == "Scribe"
-    assert APP_NAME == "VozLab"                            # %APPDATA%\VozLab, log, Run key
-    assert APP_ID == "vozlab"
-    assert secretstore._ENTROPY == b"vozlab-config-v1"     # DPAPI entropy (decrypts the token)
+    assert APP_NAME == "Scribe"                            # %APPDATA%\Scribe, log, Run key
+    assert APP_ID == "scribe"
+    # a token sealed before the rename must still decrypt...
+    assert secretstore._ENTROPY == b"scribe-config-v1"
+    assert b"vozlab-config-v1" in secretstore._LEGACY_ENTROPY
+    # ...and the old settings folder is picked up once
+    assert cfgmod.LEGACY_APP_NAME == "VozLab"

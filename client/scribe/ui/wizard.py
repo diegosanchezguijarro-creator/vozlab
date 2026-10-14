@@ -7,7 +7,7 @@ import customtkinter as ctk
 
 from .. import config as cfgmod
 from .. import hotkeys as hotkeys_mod
-from ..api import ApiError, VozLabAPI
+from ..api import ApiError, ScribeAPI
 from . import theme, widgets
 
 
@@ -237,7 +237,7 @@ class Wizard:
             self._offer_pinning(base)
 
         def run():
-            api = VozLabAPI(base, token, fingerprint=self.cfg.get("tls_pin", ""))
+            api = ScribeAPI(base, token, fingerprint=self.cfg.get("tls_pin", ""))
             try:
                 try:
                     info = api.status()
@@ -338,7 +338,7 @@ class Wizard:
 
         def run():
             try:
-                health = VozLabAPI(cfgmod.server_url(cfg), token).health()
+                health = ScribeAPI(cfgmod.server_url(cfg), token).health()
                 msg = self.app.tr("wizard_test_ok", model=health.get("whisper_model", "?"),
                                   device=health.get("device", "?"))
                 color = theme.OK

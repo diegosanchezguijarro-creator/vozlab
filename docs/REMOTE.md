@@ -50,7 +50,7 @@ Only if you understand the trade-offs. Minimum requirements:
    clients).
 3. **Firewall**: allow only 443, and only the proxy should reach 8092.
 4. **Monitoring**: watch the logs for unexpected volume —
-   `docker logs -f vozlab`.
+   `docker logs -f scribe`.
 
 Even then, remember that anyone who obtains the token can send audio to your
 server. A VPN avoids the whole question.
@@ -64,12 +64,12 @@ anything else afterwards.
 
 ```bash
 # on the server
-cd ~/vozlab/server
+cd ~/scribe/server
 bash install.sh --with-ai --tls          # or: bash install.sh --tls
 ```
 
 That generates `data/tls/cert.pem` (+ key), writes `server/.env` so Compose
-passes `VOZLAB_TLS_CERT`/`VOZLAB_TLS_KEY` to the container, and prints the
+passes `SCRIBE_TLS_CERT`/`SCRIBE_TLS_KEY` to the container, and prints the
 certificate fingerprint:
 
 ```
@@ -105,4 +105,4 @@ Find my server →  http://192.168.0.23:8092  ·  v1.4.0  ·  cuda
 ```
 
 Nobody can use it to dictate: the reply contains no credential. Turn it off with
-`VOZLAB_DISCOVERY_PORT=0` or `"discovery": false` in `server/data/config.json`.
+`SCRIBE_DISCOVERY_PORT=0` or `"discovery": false` in `server/data/config.json`.

@@ -37,10 +37,10 @@ VOLUME ["/data"]
 
 # Run unprivileged: uid/gid 1000 matches the usual desktop user, so bind-mounted
 # ./data stays writable by the person who installed it (see install.sh).
-RUN groupadd -g 1000 vozlab \
- && useradd -u 1000 -g 1000 -M -s /usr/sbin/nologin vozlab \
- && chown -R vozlab:vozlab /app
-USER vozlab
+RUN groupadd -g 1000 scribe \
+ && useradd -u 1000 -g 1000 -M -s /usr/sbin/nologin scribe \
+ && chown -R scribe:scribe /app
+USER scribe
 
 EXPOSE 8080
 # run_server.py adds the TLS flags when a certificate is configured

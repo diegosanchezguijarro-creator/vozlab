@@ -19,9 +19,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import customtkinter as ctk  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from vozlab import i18n  # noqa: E402
-from vozlab.ui import pill as pill_mod  # noqa: E402
-from vozlab.ui import theme  # noqa: E402
+from scribe import i18n  # noqa: E402
+from scribe.ui import pill as pill_mod  # noqa: E402
+from scribe.ui import theme  # noqa: E402
 
 SCREEN = (1280, 800)
 PILL_CENTER = (SCREEN[0] // 2, SCREEN[1] - 150)
@@ -60,7 +60,7 @@ def main() -> None:
         f"{overlay._measure()[0]}x{overlay._measure()[1]}"
         f"+{SCREEN[0] // 2 - overlay._measure()[0] // 2}+{SCREEN[1] - 150}")
 
-    tmp = tempfile.mkdtemp(prefix="vozlab-gif-")
+    tmp = tempfile.mkdtemp(prefix="scribe-gif-")
     frames: list[Image.Image] = []
     durations: list[int] = []
     box: list[tuple[int, int, int, int]] = []

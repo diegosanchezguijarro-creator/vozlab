@@ -46,14 +46,14 @@ nothing and `docker-compose.gpu.yml` adds the GPU.
 happily *answer* a dictated question ("are you responding to me?" → "Yes, I am
 responding to you."). The prompt forbids it, and the guard is the safety net.
 
-**Everything the app needs is in `%APPDATA%\VozLab`.** The install directory holds
+**Everything the app needs is in `%APPDATA%\Scribe`.** The install directory holds
 only code, so updates never touch settings.
 
 **Hotkeys are matched by hardware scan code** (e.g. right Ctrl = 285) with
 localised-name fallbacks, because the `keyboard` library reports key names in the
 OS language ("ctrl derecha" on Spanish Windows).
 
-**The client is a package, not a script.** `run_vozlab.py` is a thin dev entry
+**The client is a package, not a script.** `run_scribe.py` is a thin dev entry
 point; PyInstaller builds the same code into the tray app. The headless UI
 renderer (`client/tools/ui_preview.py`) runs every window with demo data, which is
 how the screenshots and the demo GIF are generated.
@@ -73,7 +73,7 @@ server/
   tests/               prompt + guard tests
   tools/               benchmark_cleanup.py
 client/
-  vozlab/
+  scribe/
     app.py             orchestrator (tray, hotkeys, recorder, paste)
     audio.py           capture, level metering, auto-stop
     hotkeys.py         hook + queue + calibration
@@ -87,12 +87,12 @@ client/
   tests/               logic tests (headless)
   tools/               make_icon.py, ui_preview.py, make_demo_gif.py,
                        install_from_source.ps1
-  vozlab.spec          PyInstaller definition
+  scribe.spec          PyInstaller definition
 installer/
   deploy.ps1           one-click installer (Smart App Control safe)
   update.ps1           in-place updater
-  VozLab.bat           double-click wrapper
-  vozlab.iss           Inno Setup script (classic .exe installer)
+  Scribe.bat           double-click wrapper
+  scribe.iss           Inno Setup script (classic .exe installer)
 .github/workflows/     ci.yml (tests) · release.yml (artifacts + GHCR) · docs.yml
 ```
 
@@ -100,10 +100,10 @@ installer/
 
 | Artifact | Built by | For whom |
 |---|---|---|
-| `VozLab-<v>-src.zip` + `deploy.ps1` | CI on tag | everyone (SAC-safe) |
-| `VozLab-Setup-<v>.exe` | Inno Setup on CI | users with Smart App Control off |
-| `VozLab-<v>-portable.zip` | PyInstaller on CI | no-install portable runs |
-| `ghcr.io/…/vozlab-server:<tag>` | Docker buildx on CI | server operators |
+| `Scribe-<v>-src.zip` + `deploy.ps1` | CI on tag | everyone (SAC-safe) |
+| `Scribe-Setup-<v>.exe` | Inno Setup on CI | users with Smart App Control off |
+| `Scribe-<v>-portable.zip` | PyInstaller on CI | no-install portable runs |
+| `ghcr.io/…/scribe-server:<tag>` | Docker buildx on CI | server operators |
 | `SHA256SUMS` | CI | verifying downloads |
 
 Each release also publishes checksums; `deploy.ps1` verifies them before

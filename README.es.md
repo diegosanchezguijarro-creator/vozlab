@@ -11,7 +11,7 @@ Sin nube, sin suscripción, sin cuenta, y sin que tu voz salga de tu red.
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-MIT-blue.svg" alt="Licencia MIT"></a>
-  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosg-dev/vozlab?include_prereleases&sort=semver" alt="Última versión"></a>
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/diegosg-dev/scribe?include_prereleases&sort=semver" alt="Última versión"></a>
   <img src="https://img.shields.io/badge/telemetr%C3%ADa-ninguna-success.svg" alt="Sin telemetría">
 </p>
 
@@ -43,7 +43,7 @@ equipo que se quede en casa. Solo se configura una vez.
 Abre **PowerShell** y pega:
 
 ```powershell
-irm https://raw.githubusercontent.com/diegosg-dev/vozlab/main/installer/deploy.ps1 | iex
+irm https://raw.githubusercontent.com/diegosg-dev/scribe/main/installer/deploy.ps1 | iex
 ```
 
 Funciona **incluso con Smart App Control activado** (la app se ejecuta con tu
@@ -57,8 +57,8 @@ En el equipo que hará el trabajo pesado (Ubuntu/Debian, o cualquier cosa con
 Docker — NAS, Windows con Docker Desktop, macOS):
 
 ```bash
-git clone https://github.com/diegosg-dev/vozlab.git
-cd vozlab/server
+git clone https://github.com/diegosg-dev/scribe.git
+cd scribe/server
 bash install.sh --with-ai
 ```
 
@@ -135,7 +135,7 @@ RTX 4060, **~5–12 s** solo con CPU. Tablas completas en
 | "No se alcanza el servidor" | Comprueba `docker ps` y que estés en la misma red |
 | "El token fue rechazado" | En el servidor: `cat server/data/config.json` (o vuelve a ejecutar `server/install.sh`); el token se muestra una vez en el primer arranque |
 | No transcribe nada | *Configuración → Privacidad → Micrófono*: permite apps de escritorio |
-| El texto no es lo que dije | Ajustes → **Exportar diagnóstico**, y mira `raw=…` en `vozlab.log` |
+| El texto no es lo que dije | Ajustes → **Exportar diagnóstico**, y mira `raw=…` en `scribe.log` |
 
 Más en [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
@@ -143,7 +143,7 @@ Más en [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 | Parte | Cómo |
 |---|---|
-| Cliente | `powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\VozLab\update.ps1"` o Ajustes → Sistema → **Buscar ahora** |
+| Cliente | `powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Programs\Scribe\update.ps1"` o Ajustes → Sistema → **Buscar ahora** |
 | Servidor | `cd server && docker compose pull && docker compose up -d` (con los mismos `-f` que usaste) |
 
 ## Contribuir

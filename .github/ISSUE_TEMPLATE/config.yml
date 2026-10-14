@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Setup help & FAQ
-    url: https://github.com/diegosg-dev/vozlab/blob/main/docs/TROUBLESHOOTING.md
+    url: https://github.com/diegosg-dev/scribe/blob/main/docs/TROUBLESHOOTING.md
     about: Installation problems, "cannot reach the server", microphone issues…
   - name: Privacy & security model
-    url: https://github.com/diegosg-dev/vozlab/blob/main/docs/PRIVACY.md
+    url: https://github.com/diegosg-dev/scribe/blob/main/docs/PRIVACY.md
     about: What Scribe stores, what it sends, and how to verify it.
   - name: Report a security issue privately
-    url: https://github.com/diegosg-dev/vozlab/security/advisories/new
+    url: https://github.com/diegosg-dev/scribe/security/advisories/new
     about: Please don't open a public issue for vulnerabilities.

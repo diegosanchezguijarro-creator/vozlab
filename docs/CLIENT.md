@@ -5,9 +5,9 @@ application: hold a key, speak, release.
 
 ## Install
 
-1. Download `VozLab-Setup-x.y.z.exe` from the repository's **Releases** page.
+1. Download `Scribe-Setup-x.y.z.exe` from the repository's **Releases** page.
 2. Run it. It installs per-user (no administrator prompt) to
-   `%LOCALAPPDATA%\Programs\VozLab`.
+   `%LOCALAPPDATA%\Programs\Scribe`.
 3. Optional: tick **Start Scribe automatically when I sign in**.
 
 > Windows SmartScreen will warn about an unknown publisher on first run
@@ -104,11 +104,11 @@ that adds or drops words, so a wrong profile can never corrupt a dictation.
 | Restore clipboard after pasting | your previous clipboard comes back |
 | Start with Windows | autostart at login |
 | Debug logging | verbose log **that also contains your words** — off by default |
-| Show / Clear log | inspect or empty `%APPDATA%\VozLab\vozlab.log` |
+| Show / Clear log | inspect or empty `%APPDATA%\Scribe\scribe.log` |
 | Export / Import / Reset settings | share a configuration; the token is never exported |
 | Check for updates | opt-in GitHub query — the only request that leaves your LAN |
 
-Settings are stored in `%APPDATA%\VozLab\config.json` (the token encrypted with
+Settings are stored in `%APPDATA%\Scribe\config.json` (the token encrypted with
 DPAPI, not in clear text); the log sits next to it (tray → **Open settings
 folder**).
 
@@ -124,10 +124,10 @@ folder**).
 
 ## Updating
 
-Install a newer `VozLab-Setup-x.y.z.exe` over the old version — settings and
-logs are preserved (they live in `%APPDATA%\VozLab`, not in the install folder).
+Install a newer `Scribe-Setup-x.y.z.exe` over the old version — settings and
+logs are preserved (they live in `%APPDATA%\Scribe`, not in the install folder).
 
 ## Uninstalling
 
 Windows *Settings → Apps → Scribe → Uninstall* (or the Start-menu uninstaller).
-Your settings file is left behind; delete `%APPDATA%\VozLab` if you want it gone.
+Your settings file is left behind; delete `%APPDATA%\Scribe` if you want it gone.

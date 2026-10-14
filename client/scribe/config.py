@@ -1,4 +1,4 @@
-"""Config handling — stored in %APPDATA%\\VozLab\\config.json on Windows.
+"""Config handling — stored in %APPDATA%\\Scribe\\config.json on Windows.
 
 The access token is kept out of the file: it is encrypted with Windows DPAPI and
 stored base64-encoded in `token_enc` (see secretstore.py). In memory it is always
@@ -7,9 +7,15 @@ available as `cfg["token"]`, so the rest of the app doesn't care.
 
 import json
 import os
+import shutil
 import sys
 
 from . import APP_NAME, secretstore
+
+# The folder used before the app was renamed to Scribe. `load()` copies an
+# existing install's settings + log across once, so nobody has to re-enter their
+# server URL or token.
+LEGACY_APP_NAME = "VozLab"
 
 DEFAULTS = {
     # bumped when a default changes and existing configs must be migrated
@@ -66,7 +72,42 @@ def config_path() -> str:
     return os.path.join(config_dir(), "config.json")
 
 
+def legacy_config_dir() -> str:
+    """The config folder used before the rename (may not exist)."""
+    if sys.platform.startswith("win"):
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+        return os.path.join(base, LEGACY_APP_NAME)
+    return os.path.join(os.path.expanduser("~"), ".config", LEGACY_APP_NAME.lower())
+
+
+def migrate_legacy_config() -> bool:
+    """Copy settings (and the log) from the pre-rename folder, once.
+
+    Only runs when there is nothing to lose: it is a no-op when a config already
+    exists in the new folder or when there is no old folder.
+    """
+    if os.path.exists(config_path()):
+        return False
+    legacy = legacy_config_dir()
+    if not os.path.isfile(os.path.join(legacy, "config.json")):
+        return False
+    try:
+        os.makedirs(config_dir(), exist_ok=True)
+        for name in os.listdir(legacy):
+            src = os.path.join(legacy, name)
+            if os.path.isfile(src):
+                # vozlab.log -> scribe.log, everything else copied as-is
+                shutil.copy2(src, os.path.join(config_dir(),
+                                               name.replace("vozlab", "scribe")))
+        print(f"[scribe] migrated settings from {legacy}", file=sys.stderr)
+        return True
+    except OSError as e:
+        print(f"[scribe] could not migrate {legacy}: {e}", file=sys.stderr)
+        return False
+
+
 def load() -> dict:
+    migrate_legacy_config()
     cfg = dict(DEFAULTS)
     stored = {}
     try:
@@ -85,7 +126,7 @@ def load() -> dict:
         try:
             token = secretstore.unprotect(encrypted)
         except OSError as e:
-            print(f"[vozlab] could not decrypt the stored token: {e}", file=sys.stderr)
+            print(f"[scribe] could not decrypt the stored token: {e}", file=sys.stderr)
             token = ""
     if not token:
         token = stored.get("token", "") or ""

@@ -1,7 +1,7 @@
 <#
-    VozLab — run from source (no installer, no signed .exe needed).
+    Scribe — run from source (no installer, no signed .exe needed).
 
-    Use this when Windows Smart App Control blocks the unsigned VozLab-Setup.exe.
+    Use this when Windows Smart App Control blocks the unsigned Scribe-Setup.exe.
     The app is launched by your signed pythonw.exe, so SAC is happy, and you get
     the same tray app, wizard and settings.
 
@@ -13,10 +13,10 @@
 $ErrorActionPreference = 'Stop'
 $ClientDir = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $VenvDir   = Join-Path $ClientDir '.venv'
-$AppData   = Join-Path $env:APPDATA 'VozLab'
-$Shortcut  = Join-Path ([Environment]::GetFolderPath('Programs')) 'VozLab.lnk'
+$AppData   = Join-Path $env:APPDATA 'Scribe'
+$Shortcut  = Join-Path ([Environment]::GetFolderPath('Programs')) 'Scribe.lnk'
 
-Write-Host "VozLab source install" -ForegroundColor Cyan
+Write-Host "Scribe source install" -ForegroundColor Cyan
 Write-Host "  source : $ClientDir"
 
 # ---------------------------------------------------------------- python ----
@@ -61,19 +61,19 @@ Write-Host "`nCreating Start Menu shortcut..." -ForegroundColor Cyan
 $shell = New-Object -ComObject WScript.Shell
 $link = $shell.CreateShortcut($Shortcut)
 $link.TargetPath = $venvPythonW
-$link.Arguments = '"' + (Join-Path $ClientDir 'run_vozlab.py') + '"'
+$link.Arguments = '"' + (Join-Path $ClientDir 'run_scribe.py') + '"'
 $link.WorkingDirectory = $ClientDir
 $link.IconLocation = (Join-Path $ClientDir 'assets\icon.ico')
-$link.Description = 'VozLab — local voice dictation'
+$link.Description = 'Scribe — local voice dictation'
 $link.Save()
 
 New-Item -ItemType Directory -Force -Path $AppData | Out-Null
 
 Write-Host "`nDone." -ForegroundColor Green
-Write-Host "  Start menu : VozLab"
+Write-Host "  Start menu : Scribe"
 Write-Host "  Settings   : $AppData\config.json"
-Write-Host "  Log        : $AppData\vozlab.log"
-Write-Host "`nLaunching VozLab now (tray icon should appear)..."
-Start-Process -FilePath $venvPythonW -ArgumentList ('"' + (Join-Path $ClientDir 'run_vozlab.py') + '"') -WorkingDirectory $ClientDir
+Write-Host "  Log        : $AppData\scribe.log"
+Write-Host "`nLaunching Scribe now (tray icon should appear)..."
+Start-Process -FilePath $venvPythonW -ArgumentList ('"' + (Join-Path $ClientDir 'run_scribe.py') + '"') -WorkingDirectory $ClientDir
 
-Write-Host "`nTip: enable 'Start with Windows' in VozLab Settings to launch it at login."
+Write-Host "`nTip: enable 'Start with Windows' in Scribe Settings to launch it at login."

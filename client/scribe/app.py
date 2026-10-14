@@ -14,21 +14,33 @@ import pyperclip
 from . import APP_NAME, DISPLAY_NAME, VERSION
 from . import (audio, config as cfgmod, hotkeys, i18n, log, platform_info, profiles,
                tray, updater)
-from .api import ApiError, VozLabAPI
+from .api import ApiError, ScribeAPI
 from .ui import about as about_ui
 from .ui import pill as pill_ui
 from .ui import settings_window, theme
 from .ui import wizard as wizard_ui
 
 AUTOSTART_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+# value name written before the rename: removed so start-with-Windows is not
+# listed twice after the app is renamed
+LEGACY_AUTOSTART_NAME = "VozLab"
 
 
 def _autostart_command() -> str:
     if getattr(sys, "frozen", False):
         return f'"{sys.executable}"'
     script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                          "run_vozlab.py")
+                          "run_scribe.py")
     return f'"{sys.executable}" "{script}"'
+
+
+def _delete_run_value(key, name: str) -> None:
+    """Remove a Run entry, ignoring 'not there'."""
+    import winreg
+    try:
+        winreg.DeleteValue(key, name)
+    except (FileNotFoundError, OSError):
+        pass
 
 
 def set_launch_at_login(enabled: bool) -> None:
@@ -37,13 +49,11 @@ def set_launch_at_login(enabled: bool) -> None:
         return
     import winreg
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, AUTOSTART_KEY, 0, winreg.KEY_SET_VALUE) as key:
+        _delete_run_value(key, LEGACY_AUTOSTART_NAME)
         if enabled:
             winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, _autostart_command())
         else:
-            try:
-                winreg.DeleteValue(key, APP_NAME)
-            except FileNotFoundError:
-                pass
+            _delete_run_value(key, APP_NAME)
 
 
 def _beep(freq: int = 800, ms: int = 80) -> None:
@@ -54,7 +64,7 @@ def _beep(freq: int = 800, ms: int = 80) -> None:
         pass
 
 
-class VozLabApp:
+class ScribeApp:
     def __init__(self):
         self.cfg = cfgmod.load()
         self.tr = i18n.Translator(self.cfg.get("ui_language", "auto"))
@@ -67,7 +77,7 @@ class VozLabApp:
 
         self.state = "idle"
         self.recorder: audio.Recorder | None = None
-        self.api = VozLabAPI(cfgmod.server_url(self.cfg), self.cfg.get("token", ""),
+        self.api = ScribeAPI(cfgmod.server_url(self.cfg), self.cfg.get("token", ""),
                              fingerprint=self.cfg.get("tls_pin", ""))
         self._last_level_post = 0.0
 
@@ -201,7 +211,7 @@ class VozLabApp:
         base = os.environ.get("LOCALAPPDATA")
         if not base:
             return None
-        candidate = os.path.join(base, "Programs", "VozLab", "update.ps1")
+        candidate = os.path.join(base, "Programs", "Scribe", "update.ps1")
         return candidate if os.path.exists(candidate) else None
 
     def run_updater(self) -> None:
@@ -483,7 +493,7 @@ class VozLabApp:
         cfgmod.save(cfg)
         log.set_secrets([cfg.get("token")])
         self.tr.set_language(cfg.get("ui_language", "auto"))
-        self.api = VozLabAPI(cfgmod.server_url(cfg), cfg.get("token", ""),
+        self.api = ScribeAPI(cfgmod.server_url(cfg), cfg.get("token", ""),
                              fingerprint=cfg.get("tls_pin", ""))
         self.hotkeys.set_hotkey(cfg.get("hotkey"))
         self.hotkeys.debug_log = self._log if cfg.get("debug") else None
@@ -529,7 +539,7 @@ def main() -> None:
     if "--version" in sys.argv:
         print(f"{DISPLAY_NAME} {VERSION}")
         return
-    app = VozLabApp()
+    app = ScribeApp()
     try:
         app.run()
     except KeyboardInterrupt:

@@ -32,8 +32,8 @@ the sensible models there.
 ### Easiest: published image + bundled AI
 
 ```bash
-git clone https://github.com/diegosg-dev/vozlab.git
-cd vozlab/server
+git clone https://github.com/diegosg-dev/scribe.git
+cd scribe/server
 bash install.sh --with-ai
 ```
 
@@ -43,8 +43,8 @@ model automatically (~4 GB, once). Nothing else to install.
 ### From this checkout (builds locally, uses an Ollama you already have)
 
 ```bash
-git clone https://github.com/diegosg-dev/vozlab.git
-cd vozlab/server
+git clone https://github.com/diegosg-dev/scribe.git
+cd scribe/server
 bash install.sh
 ```
 
@@ -81,7 +81,7 @@ docker compose -f docker-compose.yml up -d --build                            # 
 docker compose -f docker-compose.full.yml -f docker-compose.full.gpu.yml up -d
 docker compose -f docker-compose.full.yml up -d                               # CPU only
 
-docker logs -f vozlab                     # watch startup, shows the token
+docker logs -f scribe                     # watch startup, shows the token
 ```
 
 GPU support is **opt-in** (`docker-compose.gpu.yml`): the base stacks always run
@@ -132,7 +132,7 @@ Set `"cleanup": false` to skip the LLM entirely (fastest, raw transcripts).
 | endpoint | description |
 |---|---|
 | `GET /health` | status, model, device (no auth) |
-| `GET /version` | `{"name":"vozlab","version":"1.0.0"}` |
+| `GET /version` | `{"name":"scribe","version":"1.0.0"}` |
 | `POST /transcribe` | `Authorization: Bearer <token>`; raw audio body; `?cleanup=true|false`, `?language=es` |
 
 Example:
@@ -152,7 +152,7 @@ curl -X POST http://localhost:8092/transcribe \
 ## Operations
 
 ```bash
-docker logs -f vozlab          # logs (shows the token at startup)
+docker logs -f scribe          # logs (shows the token at startup)
 docker compose restart         # apply config changes
 docker compose down            # stop
 docker compose up -d --build   # update after a git pull
@@ -162,9 +162,9 @@ Backup/restore: `server/data/` (config + model cache). Models re-download if los
 
 ## Discovery
 
-The container publishes UDP **8093** and answers `VOZLAB/1 discover` probes with
+The container publishes UDP **8093** and answers `SCRIBE/1 discover` probes with
 its name, version, HTTP port and TLS flag (never the token), so the app's *Find my
-server* button works. Set `VOZLAB_DISCOVERY_PORT=0` to switch it off.
+server* button works. Set `SCRIBE_DISCOVERY_PORT=0` to switch it off.
 
 ## Security notes
 

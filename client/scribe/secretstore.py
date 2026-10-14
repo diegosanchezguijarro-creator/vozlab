@@ -14,7 +14,10 @@ import ctypes
 import sys
 
 PREFIX = "dpapi:v1:"
-_ENTROPY = b"vozlab-config-v1"
+_ENTROPY = b"scribe-config-v1"
+# Entropy used before the rename: kept so an already-encrypted token still
+# decrypts. `protect()` rewrites it with _ENTROPY, so it migrates on next save.
+_LEGACY_ENTROPY = (b"vozlab-config-v1",)
 _CRYPTPROTECT_UI_FORBIDDEN = 0x01
 
 
@@ -47,7 +50,7 @@ def _encrypt(raw: bytes) -> bytes:
     blob_entropy = _blob(_ENTROPY)
     blob_out = _DataBlob()
     ok = crypt32.CryptProtectData(
-        ctypes.byref(blob_in), "VozLab",
+        ctypes.byref(blob_in), "Scribe",
         ctypes.byref(blob_entropy), None, None,
         _CRYPTPROTECT_UI_FORBIDDEN, ctypes.byref(blob_out),
     )
@@ -59,12 +62,12 @@ def _encrypt(raw: bytes) -> bytes:
         kernel32.LocalFree(blob_out.pbData)
 
 
-def _decrypt(raw: bytes) -> bytes:
+def _decrypt(raw: bytes, entropy: bytes = _ENTROPY) -> bytes:
     """DPAPI-decrypt bytes (Windows only; tests replace this)."""
     crypt32 = ctypes.windll.crypt32
     kernel32 = ctypes.windll.kernel32
     blob_in = _blob(raw)
-    blob_entropy = _blob(_ENTROPY)
+    blob_entropy = _blob(entropy)
     blob_out = _DataBlob()
     ok = crypt32.CryptUnprotectData(
         ctypes.byref(blob_in), None,
@@ -95,7 +98,17 @@ def unprotect(value: str) -> str:
     if not available():
         raise OSError("this value was encrypted on Windows (DPAPI) and cannot be "
                       "read on this machine")
-    return _decrypt(base64.b64decode(value[len(PREFIX):])).decode("utf-8")
+    data = base64.b64decode(value[len(PREFIX):])
+    try:
+        return _decrypt(data).decode("utf-8")
+    except OSError:
+        # a token encrypted before the rename: try the old entropy, then give up
+        for entropy in _LEGACY_ENTROPY:
+            try:
+                return _decrypt(data, entropy).decode("utf-8")
+            except OSError:
+                continue
+        raise
 
 
 def is_protected(value: str) -> bool:

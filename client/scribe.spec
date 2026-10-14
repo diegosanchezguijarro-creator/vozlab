@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec — builds the VozLab Windows app (one-dir, windowed).
+"""PyInstaller spec — builds the Scribe Windows app (one-dir, windowed).
 
-    pyinstaller vozlab.spec --noconfirm
+    pyinstaller scribe.spec --noconfirm
 """
 import sys
 
@@ -20,7 +20,7 @@ hiddenimports = [
 datas = collect_data_files("customtkinter")
 datas += [("assets/icon.ico", "assets"), ("assets/icon.png", "assets")]
 # translations are plain JSON next to the package
-datas += [("vozlab/locales", "vozlab/locales")]
+datas += [("scribe/locales", "scribe/locales")]
 hiddenimports += collect_submodules("customtkinter")
 hiddenimports += collect_submodules("darkdetect")
 
@@ -33,7 +33,7 @@ else:
     hiddenimports += ["pystray._xorg", "pystray._appindicator"]
 
 a = Analysis(
-    ["run_vozlab.py"],
+    ["run_scribe.py"],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -51,7 +51,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="VozLab",
+    name="Scribe",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -66,5 +66,5 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name="VozLab",
+    name="Scribe",
 )

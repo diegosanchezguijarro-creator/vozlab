@@ -14,12 +14,17 @@ import socket
 import time
 
 PROBE_PORT = 8093
-MAGIC = b"VOZLAB/1 discover"
+MAGIC = b"SCRIBE/1 discover"
+# the probe and reply name used before the rename: a new app still finds a
+# server that has not been updated yet, and accepts the old reply name
+LEGACY_MAGIC = b"VOZLAB/1 discover"
+KNOWN_NAMES = ("scribe", "vozlab")
 TIMEOUT = 1.6
 
 
-def probe_message() -> bytes:
-    return MAGIC + b"\n"
+def probe_messages() -> list[bytes]:
+    """Both probe packets: the current one and the pre-rename one."""
+    return [MAGIC + b"\n", LEGACY_MAGIC + b"\n"]
 
 
 def parse_reply(data: bytes, host: str) -> dict | None:
@@ -28,7 +33,7 @@ def parse_reply(data: bytes, host: str) -> dict | None:
         payload = json.loads(data.decode("utf-8", "replace"))
     except (ValueError, UnicodeDecodeError):
         return None
-    if not isinstance(payload, dict) or payload.get("name") != "vozlab":
+    if not isinstance(payload, dict) or payload.get("name") not in KNOWN_NAMES:
         return None
     port = payload.get("port") or 8092
     try:
@@ -68,11 +73,12 @@ def discover(timeout: float = TIMEOUT, port: int = PROBE_PORT) -> list[dict]:
             pass
 
         for target in dict.fromkeys(targets):
-            for _ in range(2):                      # a lost packet is common on Wi-Fi
-                try:
-                    sock.sendto(probe_message(), (target, port))
-                except OSError:
-                    pass
+            for message in probe_messages():
+                for _ in range(2):                  # a lost packet is common on Wi-Fi
+                    try:
+                        sock.sendto(message, (target, port))
+                    except OSError:
+                        pass
 
         deadline = time.time() + timeout
         while time.time() < deadline:

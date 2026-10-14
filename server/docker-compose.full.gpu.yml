@@ -2,7 +2,7 @@
 #
 #   docker compose -f docker-compose.full.yml -f docker-compose.full.gpu.yml up -d
 services:
-  vozlab:
+  scribe:
     deploy:
       resources:
         reservations:

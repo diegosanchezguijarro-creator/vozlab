@@ -1,8 +1,8 @@
 site_name: Scribe
 site_description: Local, private voice dictation for Windows — your own Whisper + LLM server.
-site_url: https://diegosg-dev.github.io/vozlab/
-repo_url: https://github.com/diegosg-dev/vozlab
-repo_name: diegosg-dev/vozlab
+site_url: https://diegosg-dev.github.io/scribe/
+repo_url: https://github.com/diegosg-dev/scribe
+repo_name: diegosg-dev/scribe
 edit_uri: edit/main/docs/
 copyright: MIT licensed · built by the Scribe contributors
 
@@ -34,7 +34,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/diegosg-dev/vozlab
+      link: https://github.com/diegosg-dev/scribe
 
 markdown_extensions:
   - admonition

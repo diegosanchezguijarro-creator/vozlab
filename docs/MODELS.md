@@ -23,7 +23,7 @@ Change it in `server/data/config.json`:
 { "whisper_model": "medium", "language": "auto" }
 ```
 
-…or with an environment variable: `VOZLAB_WHISPER_MODEL=medium`.
+…or with an environment variable: `SCRIBE_WHISPER_MODEL=medium`.
 
 Notes:
 
@@ -42,7 +42,7 @@ Notes:
 | `gemma2:9b` | ~5.4 GB | ~6 GB | Gemma licence | good, needs more VRAM |
 
 ```bash
-docker exec vozlab-ollama ollama pull qwen2.5:3b-instruct     # or any model
+docker exec scribe-ollama ollama pull qwen2.5:3b-instruct     # or any model
 # then set "cleanup_model": "qwen2.5:3b-instruct" in server/data/config.json
 ```
 

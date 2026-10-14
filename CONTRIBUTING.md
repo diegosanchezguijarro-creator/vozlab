@@ -21,7 +21,7 @@ welcome.
 cd client
 pip install -r requirements.txt -r requirements-dev.txt
 python -m pytest tests -q          # 30 logic tests, no audio hardware needed
-python run_vozlab.py               # run the tray app
+python run_scribe.py               # run the tray app
 ```
 
 **Server**:
@@ -29,7 +29,7 @@ python run_vozlab.py               # run the tray app
 ```bash
 cd server
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
-docker logs -f vozlab
+docker logs -f scribe
 ```
 
 **Server tests** (no Docker needed):
@@ -71,7 +71,7 @@ Run the same things locally before pushing: `python -m pytest tests -q` in both
 ## Translations
 
 The UI ships English and Spanish, and the strings live in plain JSON:
-[`client/vozlab/locales/en.json`](client/vozlab/locales/en.json). To add a
+[`client/scribe/locales/en.json`](client/scribe/locales/en.json). To add a
 language:
 
 1. copy `en.json` to `<code>.json` (e.g. `fr.json`),

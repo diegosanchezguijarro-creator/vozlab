@@ -3,6 +3,38 @@
 All notable changes to Scribe are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-10-14
+
+**The rename is complete: no "VozLab" left anywhere, with a migration that
+carries your settings across.**
+
+### Changed — every mention is now Scribe
+- Python package `vozlab` → `scribe`, entry point `run_scribe.py`, PyInstaller
+  spec `scribe.spec`, Inno script `scribe.iss`, wrapper `Scribe.bat`.
+- Config folder `%APPDATA%\Scribe` and log `scribe.log`; Windows shortcut and
+  startup entry `Scribe`; install folder `%LOCALAPPDATA%\Programs\Scribe`.
+- Environment variables `SCRIBE_*`, container image
+  `ghcr.io/diegosg-dev/scribe-server`, repository `diegosg-dev/scribe`, release
+  assets `Scribe-Setup-*.exe` / `Scribe-<v>-src.zip`.
+- LAN discovery cookie is now `SCRIBE/1`. The app and server still accept the
+  old `VOZLAB/1` probe, reply and `name`, so a mixed old/new pair stays
+  discoverable.
+
+### Migration — automatic, nothing to re-enter
+- On first launch the app copies settings + log from `%APPDATA%\VozLab` and
+  decrypts the old DPAPI token (the pre-rename entropy is still tried).
+- The installer removes the old `VozLab.lnk` shortcuts and startup entry so
+  Windows does not start two copies.
+- The server still reads a legacy `VOZLAB_*` `.env` (e.g. `VOZLAB_TLS_CERT`), so
+  HTTPS keeps working even without re-running `install.sh`.
+
+### Upgrading
+- **Client**: reinstall from `Scribe-1.6.0-src.zip` (SAC-safe) — your token and
+  preferences move themselves.
+- **Server**: `cd ~/vozlab/server && docker compose pull && docker compose up -d`
+  after the 1.6.0 image is published (the data volume, and therefore the tokens,
+  is unchanged).
+
 ## [1.5.0] — 2026-10-14
 
 **The app is now called Scribe, and the status pill is translucent glass.**
@@ -12,10 +44,10 @@ This project follows [Semantic Versioning](https://semver.org/).
   titles, the About window, the startup log line and the docs — it now reads
   **Scribe**.
 - The stable identifiers are deliberately unchanged so nothing breaks: the
-  config folder (`%APPDATA%\VozLab`), the DPAPI-encrypted token, the log
-  filename, the `VOZLAB_*` environment variables, the
-  `ghcr.io/diegosg-dev/vozlab-server` image, the release asset names
-  (`VozLab-Setup-*.exe`, `VozLab-<v>-src.zip`) and the Windows Start-menu
+  config folder (`%APPDATA%\Scribe`), the DPAPI-encrypted token, the log
+  filename, the `SCRIBE_*` environment variables, the
+  `ghcr.io/diegosg-dev/scribe-server` image, the release asset names
+  (`Scribe-Setup-*.exe`, `Scribe-<v>-src.zip`) and the Windows Start-menu
   shortcut / startup entry. Your machine keeps its settings and token — no
   migration, no re-entering anything.
 
@@ -43,7 +75,7 @@ vocabulary, LAN discovery, and an arm64 image.**
 ### Added — HTTPS with certificate pinning
 - `install.sh --tls` generates a self-signed certificate (SANs cover the LAN IP,
   localhost and the hostname), writes `server/.env` so Compose passes
-  `VOZLAB_TLS_CERT`/`VOZLAB_TLS_KEY`, and prints the fingerprint.
+  `SCRIBE_TLS_CERT`/`SCRIBE_TLS_KEY`, and prints the fingerprint.
 - The app **pins** that certificate on first connect (trust on first use) and
   refuses any other certificate afterwards — `fetch_fingerprint()`,
   `PinnedAdapter` (urllib3 `assert_fingerprint`, so pinning replaces the CA check
@@ -75,11 +107,11 @@ vocabulary, LAN discovery, and an arm64 image.**
   sanitized: de-duplicated, trimmed, capped at 200 terms).
 
 ### Added — LAN discovery
-- The server answers `VOZLAB/1 discover` on UDP 8093 with its name, version, HTTP
+- The server answers `SCRIBE/1 discover` on UDP 8093 with its name, version, HTTP
   port, TLS flag, model and device — **never the token or any setting**.
 - *Find my server* in the wizard and the Server tab broadcasts the probe and
   lists what answers (including over Docker's UDP port mapping). Disable with
-  `VOZLAB_DISCOVERY_PORT=0` or `"discovery": false`.
+  `SCRIBE_DISCOVERY_PORT=0` or `"discovery": false`.
 
 ### Added — multi-arch server image
 - `linux/amd64` **and** `linux/arm64` are built and pushed per release. The
@@ -124,7 +156,7 @@ translations in JSON.
 - **Per-device tokens**: *Settings → Server → Connected devices* issues a token
   for one machine; only a salted SHA-256 hash is kept on the server and the value
   is shown once. Revoke a stolen laptop without touching the others.
-- **Dictated text no longer reaches `vozlab.log`.** The log records timings,
+- **Dictated text no longer reaches `scribe.log`.** The log records timings,
   language and length; only *Debug logging* (off) records the words. Every line
   is additionally scrubbed of the token, `Bearer …` headers and `"token": "…"`.
 - **No audio on disk, anywhere.** The server decodes the uploaded bytes in memory
@@ -132,7 +164,7 @@ translations in JSON.
 - **Minimal unauthenticated surface**: `/health` returns only
   `{"ok", "version", "api"}`; models, device, GPU and counters moved behind the
   token at `/status`. OpenAPI docs are disabled. Requests are rate limited
-  (`VOZLAB_RATE_LIMIT`, default 120/min) and token checks are constant-time.
+  (`SCRIBE_RATE_LIMIT`, default 120/min) and token checks are constant-time.
 - **The token is printed once**, when it is created — not on every restart, so it
   stops piling up in `docker logs`/journald.
 - **Container hardening**: non-root (uid 1000), read-only root filesystem,
@@ -166,7 +198,7 @@ translations in JSON.
   counter while you talk, and **click the pill to copy** the last dictation.
 - Tray: **Copy last dictation**, **Pause for 30 min** (with a pause icon), and
   Esc now **cancels** a recording instead of sending it.
-- i18n moved to `client/vozlab/locales/{en,es}.json`; a test enforces that every
+- i18n moved to `client/scribe/locales/{en,es}.json`; a test enforces that every
   language has the same keys and the same `{placeholders}`. Adding a language is
   now a single JSON file.
 
@@ -175,7 +207,7 @@ translations in JSON.
   **bandit**, **gitleaks**, **pip-audit**, and a job that fails if the Dockerfile
   and `requirements.txt` drift apart.
 - **Dependabot** for pip, Docker and GitHub Actions.
-- Every release publishes an **SBOM** (`vozlab-server-<version>.spdx.json`).
+- Every release publishes an **SBOM** (`scribe-server-<version>.spdx.json`).
 - **Soak tests** (`client/tests/test_soak.py`) drive 200 recording cycles and 50
   hotkey restarts to catch thread/memory leaks. They found two real ones: a
   worker thread leaked per hotkey restart, and shared mutable state between
@@ -203,10 +235,10 @@ documented end to end.**
 - `installer/deploy.ps1`: one-click installer that works **with Smart App Control
   enabled**. Downloads the release source, verifies its SHA256 against
   `SHA256SUMS`, builds a private virtual environment and launches the app with the
-  signed `pythonw.exe`. Plus `VozLab.bat` (double-click) and `update.ps1`
+  signed `pythonw.exe`. Plus `Scribe.bat` (double-click) and `update.ps1`
   (in-place updates that keep your settings).
-- Release workflow now publishes `VozLab-<v>-src.zip` and `SHA256SUMS`, and builds
-  + pushes `ghcr.io/<owner>/vozlab-server:<tag|latest>` so the server needs no
+- Release workflow now publishes `Scribe-<v>-src.zip` and `SHA256SUMS`, and builds
+  + pushes `ghcr.io/<owner>/scribe-server:<tag|latest>` so the server needs no
   local build.
 - `docker-compose.full.yml`: all-in-one stack (server + Ollama + model preload).
 - `install.sh --with-ai` / `--cpu` / `--help` with preflight checks.
@@ -237,7 +269,7 @@ documented end to end.**
   benchmark, better Spanish punctuation, friendlier licence for redistribution.
 - The cleanup guard is now accent-insensitive, so restoring accents in Spanish
   ("que tal" → "¿qué tal?") is no longer mistaken for inventing words.
-- `/version` and `/health` expose `api: 1`; `VOZLAB_*` environment variables can
+- `/version` and `/health` expose `api: 1`; `SCRIBE_*` environment variables can
   override any server setting.
 
 ### Fixed
@@ -289,7 +321,7 @@ documented end to end.**
 - Server: `cleanup_guard` setting, `cleanup_rejected` field in `/transcribe`
   responses, and a test suite for the cleanup prompt + guard (15 tests).
 - Client: dictations are logged with both the raw and the formatted text
-  (`%APPDATA%\VozLab\vozlab.log`), and rejections are reported in the log.
+  (`%APPDATA%\Scribe\scribe.log`), and rejections are reported in the log.
 
 ## [1.0.1] — 2026-10-13
 
@@ -314,7 +346,7 @@ First public release.
   localized-name fallbacks
 - Clipboard-safe pasting (restores your previous clipboard)
 - Settings window (EN/ES) with start-with-Windows support
-- File logging to `%APPDATA%\VozLab\vozlab.log`
+- File logging to `%APPDATA%\Scribe\scribe.log`
 
 ### Server
 - FastAPI service with `/transcribe`, `/health`, `/version`

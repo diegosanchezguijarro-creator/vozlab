@@ -31,7 +31,7 @@ jobs:
         shell: bash
         working-directory: client
         run: |
-          client_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("vozlab/__init__.py").read()).group(1))')"
+          client_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("scribe/__init__.py").read()).group(1))')"
           server_version="$(python -c 'import re;print(re.search(r"VERSION = \"([^\"]+)\"", open("../server/server.py").read()).group(1))')"
           if [ "$client_version" != "${{ steps.ver.outputs.version }}" ]; then
             echo "::error::tag v${{ steps.ver.outputs.version }} does not match client VERSION=$client_version"
@@ -53,33 +53,33 @@ jobs:
 
       - name: Build the app (PyInstaller)
         working-directory: client
-        run: pyinstaller vozlab.spec --noconfirm
+        run: pyinstaller scribe.spec --noconfirm
 
       - name: Build the installer (Inno Setup)
         working-directory: installer
         shell: pwsh
         run: |
           choco install innosetup --no-progress -y
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.ver.outputs.version }}" vozlab.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.ver.outputs.version }}" scribe.iss
 
       - name: Build portable zip
         shell: pwsh
-        run: Compress-Archive -Path client/dist/VozLab/* -DestinationPath "client/dist/VozLab-${{ steps.ver.outputs.version }}-portable.zip"
+        run: Compress-Archive -Path client/dist/Scribe/* -DestinationPath "client/dist/Scribe-${{ steps.ver.outputs.version }}-portable.zip"
 
       # The Smart-App-Control-safe download: source + scripts, installed via
       # installer/deploy.ps1 (no unsigned .exe involved).
       - name: Build source zip
         shell: pwsh
         run: |
-          git archive --format=zip --prefix="VozLab/" -o "VozLab-${{ steps.ver.outputs.version }}-src.zip" HEAD
+          git archive --format=zip --prefix="Scribe/" -o "Scribe-${{ steps.ver.outputs.version }}-src.zip" HEAD
 
       - name: Checksums
         shell: pwsh
         run: |
           $files = @(
-            "installer/output/VozLab-Setup-${{ steps.ver.outputs.version }}.exe",
-            "client/dist/VozLab-${{ steps.ver.outputs.version }}-portable.zip",
-            "VozLab-${{ steps.ver.outputs.version }}-src.zip"
+            "installer/output/Scribe-Setup-${{ steps.ver.outputs.version }}.exe",
+            "client/dist/Scribe-${{ steps.ver.outputs.version }}-portable.zip",
+            "Scribe-${{ steps.ver.outputs.version }}-src.zip"
           )
           $lines = foreach ($f in $files) {
             $hash = (Get-FileHash -Algorithm SHA256 -Path $f).Hash.ToLower()
@@ -95,9 +95,9 @@ jobs:
           draft: false
           generate_release_notes: true
           files: |
-            installer/output/VozLab-Setup-*.exe
-            client/dist/VozLab-*-portable.zip
-            VozLab-*-src.zip
+            installer/output/Scribe-Setup-*.exe
+            client/dist/Scribe-*-portable.zip
+            Scribe-*-src.zip
             SHA256SUMS
 
   # ---------------------------------------------------------------------------
@@ -134,8 +134,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           provenance: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/vozlab-server:${{ github.ref_name }}
-            ghcr.io/${{ github.repository_owner }}/vozlab-server:latest
+            ghcr.io/${{ github.repository_owner }}/scribe-server:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/scribe-server:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -143,13 +143,13 @@ jobs:
       - name: Generate SBOM (SPDX)
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/${{ github.repository_owner }}/vozlab-server:${{ github.ref_name }}
-          artifact-name: vozlab-server.spdx.json      # one copy: the release asset below
-          output-file: vozlab-server.spdx.json
+          image: ghcr.io/${{ github.repository_owner }}/scribe-server:${{ github.ref_name }}
+          artifact-name: scribe-server.spdx.json      # one copy: the release asset below
+          output-file: scribe-server.spdx.json
           format: spdx-json
           upload-artifact: false                      # no duplicate in the run artifacts
 
       - name: Attach the SBOM to the release
         uses: softprops/action-gh-release@v2
         with:
-          files: vozlab-server.spdx.json
+          files: scribe-server.spdx.json

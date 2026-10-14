@@ -11,10 +11,10 @@ import requests
 
 from . import VERSION
 
-DEFAULT_REPO = "diegosg-dev/vozlab"
+DEFAULT_REPO = "diegosg-dev/scribe"
 API_LATEST = "https://api.github.com/repos/{repo}/releases/latest"
-INSTALLER_ASSET = "VozLab-{version}-src.zip"
-USER_AGENT = f"VozLab/{VERSION}"
+INSTALLER_ASSET = "Scribe-{version}-src.zip"
+USER_AGENT = f"Scribe/{VERSION}"
 
 
 class UpdateError(Exception):
